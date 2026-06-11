@@ -26,6 +26,15 @@ storage:
   pathStyle: "false"
   bootstrap: "false"
 
+email:
+  provider: smtp
+  from: Cap <no-reply@take3tech.com>
+  smtp:
+    host: smtp.postmarkapp.com
+    port: "587"
+    secure: "false"
+    requireTls: "true"
+
 minio:
   enabled: false
 

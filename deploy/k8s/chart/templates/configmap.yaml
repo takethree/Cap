@@ -25,6 +25,19 @@ data:
   S3_INTERNAL_ENDPOINT: {{ . | quote }}
   {{- end }}
   S3_PATH_STYLE: {{ .Values.storage.pathStyle | quote }}
+  {{- if .Values.email.provider }}
+  EMAIL_PROVIDER: {{ .Values.email.provider | quote }}
+  {{- end }}
+  {{- if eq .Values.email.provider "smtp" }}
+  SMTP_HOST: {{ .Values.email.smtp.host | quote }}
+  SMTP_PORT: {{ .Values.email.smtp.port | quote }}
+  SMTP_FROM: {{ .Values.email.from | quote }}
+  SMTP_SECURE: {{ .Values.email.smtp.secure | quote }}
+  SMTP_REQUIRE_TLS: {{ .Values.email.smtp.requireTls | quote }}
+  {{- with .Values.email.smtp.messageStream }}
+  SMTP_MESSAGE_STREAM: {{ . | quote }}
+  {{- end }}
+  {{- end }}
   MEDIA_SERVER_URL: {{ printf "http://%s:3456" (include "cap.mediaServerName" .) | quote }}
   MEDIA_SERVER_WEBHOOK_URL: {{ printf "http://%s:3000" (include "cap.webName" .) | quote }}
   CAP_VIDEOS_DEFAULT_PUBLIC: {{ .Values.web.defaultVideosPublic | quote }}
