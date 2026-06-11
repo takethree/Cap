@@ -37,6 +37,8 @@ spec:
       app.kubernetes.io/component: web
   template:
     metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
       labels:
         {{- include "cap.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: web
@@ -159,6 +161,57 @@ spec:
                 configMapKeyRef:
                   name: {{ include "cap.configName" . }}
                   key: S3_PATH_STYLE
+            {{- if .Values.email.provider }}
+            - name: EMAIL_PROVIDER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: EMAIL_PROVIDER
+            {{- end }}
+            {{- if eq .Values.email.provider "smtp" }}
+            - name: SMTP_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: SMTP_HOST
+            - name: SMTP_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: SMTP_PORT
+            - name: SMTP_FROM
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: SMTP_FROM
+            - name: SMTP_SECURE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: SMTP_SECURE
+            - name: SMTP_REQUIRE_TLS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: SMTP_REQUIRE_TLS
+            {{- with .Values.email.smtp.messageStream }}
+            - name: SMTP_MESSAGE_STREAM
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" $ }}
+                  key: SMTP_MESSAGE_STREAM
+            {{- end }}
+            - name: SMTP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.smtpUsername }}
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.smtpPassword }}
+            {{- end }}
             - name: MEDIA_SERVER_URL
               valueFrom:
                 configMapKeyRef:

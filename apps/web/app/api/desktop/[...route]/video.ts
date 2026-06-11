@@ -1,5 +1,5 @@
 import { db } from "@cap/database";
-import { sendEmail } from "@cap/database/emails/config";
+import { sendEmail, supportsScheduledEmail } from "@cap/database/emails/config";
 import { FirstShareableLink } from "@cap/database/emails/first-shareable-link";
 import { nanoId } from "@cap/database/helpers";
 import {
@@ -275,7 +275,12 @@ app.get(
 					.from(videos)
 					.where(eq(videos.ownerId, user.id));
 
-				if (videoCount?.[0] && videoCount[0].count === 1 && user.email) {
+				if (
+					videoCount?.[0] &&
+					videoCount[0].count === 1 &&
+					user.email &&
+					supportsScheduledEmail()
+				) {
 					console.log(
 						"[SendFirstShareableLinkEmail] Sending first shareable link email with 5-minute delay",
 					);

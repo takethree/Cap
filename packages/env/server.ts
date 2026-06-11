@@ -26,9 +26,17 @@ function createServerEnv() {
 					"32 byte hex string for encrypting values like AWS access keys",
 				),
 
-			// Cap uses Resend for email sending, including sending login code emails
+			EMAIL_PROVIDER: z.enum(["resend", "smtp"]).optional(),
 			RESEND_API_KEY: z.string().optional(),
 			RESEND_FROM_DOMAIN: z.string().optional(),
+			SMTP_HOST: z.string().optional(),
+			SMTP_PORT: z.string().optional(),
+			SMTP_USERNAME: z.string().optional(),
+			SMTP_PASSWORD: z.string().optional(),
+			SMTP_FROM: z.string().optional(),
+			SMTP_SECURE: boolString(false),
+			SMTP_REQUIRE_TLS: boolString(true),
+			SMTP_MESSAGE_STREAM: z.string().optional(),
 
 			/// S3 configuration
 			// Though they are prefixed with `CAP_AWS`, these don't have to be

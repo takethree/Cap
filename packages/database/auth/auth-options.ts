@@ -10,7 +10,7 @@ import EmailProvider from "next-auth/providers/email";
 import GoogleProvider from "next-auth/providers/google";
 import type { Provider } from "next-auth/providers/index";
 import WorkOSProvider from "next-auth/providers/workos";
-import { sendEmail } from "../emails/config.ts";
+import { isEmailConfigured, sendEmail } from "../emails/config.ts";
 import { db } from "../index.ts";
 import { users } from "../schema.ts";
 import { isEmailAllowedForSignup } from "./domain-utils.ts";
@@ -103,7 +103,7 @@ export const authOptions = (): NextAuthOptions => {
 					async sendVerificationRequest({ identifier, token }) {
 						console.log("sendVerificationRequest");
 
-						if (!serverEnv().RESEND_API_KEY) {
+						if (!isEmailConfigured()) {
 							console.log("\n");
 							console.log(
 								"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",

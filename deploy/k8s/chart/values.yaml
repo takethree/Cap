@@ -20,6 +20,8 @@ runtimeSecret:
     databaseEncryptionKey: database-encryption-key
     nextauthSecret: nextauth-secret
     mediaServerWebhookSecret: media-server-webhook-secret
+    smtpUsername: smtp-username
+    smtpPassword: smtp-password
   values:
     mysqlPassword: ""
     mysqlRootPassword: ""
@@ -28,6 +30,8 @@ runtimeSecret:
     databaseEncryptionKey: ""
     nextauthSecret: ""
     mediaServerWebhookSecret: ""
+    smtpUsername: ""
+    smtpPassword: ""
 
 storage:
   bucket: cap
@@ -36,6 +40,16 @@ storage:
   internalEndpoint: ""
   pathStyle: "true"
   bootstrap: "true"
+
+email:
+  provider: ""
+  from: ""
+  smtp:
+    host: ""
+    port: "587"
+    secure: "false"
+    requireTls: "true"
+    messageStream: ""
 
 web:
   replicas: 1
