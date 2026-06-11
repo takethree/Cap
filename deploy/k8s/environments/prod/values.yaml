@@ -1,7 +1,7 @@
 web:
   image:
     repository: 159207264407.dkr.ecr.us-east-2.amazonaws.com/cap-web
-    tag: sha-0f52660e81dd4947ca330319f99d247a74a25c8f
+    tag: sha-5bf49c744ba4ddf88896c2c65dce0c287b78d304
     pullPolicy: IfNotPresent
   publicUrl: https://cap.take3tech.dev
   nextauthUrl: https://cap.take3tech.dev
@@ -9,7 +9,7 @@ web:
 mediaServer:
   image:
     repository: 159207264407.dkr.ecr.us-east-2.amazonaws.com/cap-media-server
-    tag: sha-0f52660e81dd4947ca330319f99d247a74a25c8f
+    tag: sha-5bf49c744ba4ddf88896c2c65dce0c287b78d304
     pullPolicy: IfNotPresent
 serviceAccount:
   name: cap-web
