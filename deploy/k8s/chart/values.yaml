@@ -1,0 +1,116 @@
+nameOverride: ""
+fullnameOverride: ""
+
+imagePullSecrets: []
+
+runtimeSecret:
+  create: false
+  name: cap-runtime
+  keys:
+    mysqlPassword: mysql-password
+    mysqlRootPassword: mysql-root-password
+    minioRootUser: minio-root-user
+    minioRootPassword: minio-root-password
+    databaseEncryptionKey: database-encryption-key
+    nextauthSecret: nextauth-secret
+    mediaServerWebhookSecret: media-server-webhook-secret
+  values:
+    mysqlPassword: ""
+    mysqlRootPassword: ""
+    minioRootUser: ""
+    minioRootPassword: ""
+    databaseEncryptionKey: ""
+    nextauthSecret: ""
+    mediaServerWebhookSecret: ""
+
+web:
+  replicas: 1
+  image:
+    repository: ghcr.io/capsoftware/cap-web
+    tag: latest
+    pullPolicy: IfNotPresent
+  publicUrl: http://localhost:3000
+  nextauthUrl: ""
+  nodeEnv: production
+  defaultVideosPublic: "true"
+  allowedSignupDomains: ""
+  initImage: busybox:1.36
+  configEnv: {}
+  extraEnv: []
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+mediaServer:
+  replicas: 1
+  image:
+    repository: ghcr.io/capsoftware/cap-media-server
+    tag: latest
+    pullPolicy: IfNotPresent
+  maxConcurrentVideoProcesses: "2"
+  memoryLimitMb: "1536"
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+
+mysql:
+  image:
+    repository: mysql
+    tag: "8.0"
+    pullPolicy: IfNotPresent
+  auth:
+    database: cap
+    username: cap
+  persistence:
+    storageClassName: gp3
+    size: 20Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+minio:
+  image:
+    repository: minio/minio
+    tag: latest
+    pullPolicy: IfNotPresent
+  bucket: cap
+  region: us-east-1
+  publicEndpoint: http://localhost:9000
+  pathStyle: "true"
+  persistence:
+    storageClassName: gp3
+    size: 100Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+ingress:
+  enabled: true
+  className: haproxy
+  webHost: cap.local
+  s3Host: cap-s3.local
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+    haproxy.org/check: "false"
+    haproxy.org/load-balance: leastconn
+    haproxy.org/request-body-size: "10737418240"
+    haproxy.org/timeout-client: 3600s
+    haproxy.org/timeout-http-request: 120s
+    haproxy.org/timeout-server: 3600s
+    haproxy.org/timeout-tunnel: 3600s
