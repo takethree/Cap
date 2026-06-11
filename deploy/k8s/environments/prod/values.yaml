@@ -5,6 +5,7 @@ web:
     pullPolicy: IfNotPresent
   publicUrl: https://cap.take3tech.dev
   nextauthUrl: https://cap.take3tech.dev
+  allowedSignupDomains: take3tech.com
 
 mediaServer:
   image:

@@ -37,6 +37,8 @@ spec:
       app.kubernetes.io/component: web
   template:
     metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
       labels:
         {{- include "cap.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: web
