@@ -1,4 +1,4 @@
-import { fromContainerMetadata, fromSSO } from "@aws-sdk/credential-providers";
+import { fromNodeProviderChain, fromSSO } from "@aws-sdk/credential-providers";
 import type {
 	AwsCredentialIdentity,
 	AwsCredentialIdentityProvider,
@@ -40,8 +40,8 @@ export class AwsCredentials extends Effect.Service<AwsCredentials>()(
 						return fromSSO({ profile: process.env.AWS_DEFAULT_PROFILE });
 					}
 
-					yield* Effect.log("Falling back to ECS metadata");
-					return fromContainerMetadata();
+					yield* Effect.log("Using AWS SDK credential provider chain");
+					return fromNodeProviderChain();
 				});
 
 			return { credentials };

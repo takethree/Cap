@@ -37,17 +37,19 @@ export async function register() {
 	};
 	// Add a timeout to trigger migrations after 5 seconds on server start
 	setTimeout(() => triggerMigrations(), 5000);
-	setTimeout(() => createS3Bucket(), 5000);
+	if (serverEnv().CAP_S3_BOOTSTRAP) setTimeout(() => createS3Bucket(), 5000);
 }
 
 async function createS3Bucket() {
+	const accessKeyId = serverEnv().CAP_AWS_ACCESS_KEY;
+	const secretAccessKey = serverEnv().CAP_AWS_SECRET_KEY;
 	const s3Client = new S3Client({
 		endpoint: serverEnv().S3_INTERNAL_ENDPOINT,
 		region: serverEnv().CAP_AWS_REGION,
-		credentials: {
-			accessKeyId: serverEnv().CAP_AWS_ACCESS_KEY ?? "",
-			secretAccessKey: serverEnv().CAP_AWS_SECRET_KEY ?? "",
-		},
+		credentials:
+			accessKeyId && secretAccessKey
+				? { accessKeyId, secretAccessKey }
+				: undefined,
 		forcePathStyle: serverEnv().S3_PATH_STYLE,
 	});
 

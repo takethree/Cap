@@ -50,6 +50,7 @@ function createServerEnv() {
 			S3_PATH_STYLE: boolString(true).describe(
 				"Whether the bucket should be accessed using path-style URLs (common for non-AWS providers, eg. '/{bucket}/{key}') or virtual-hosted-style URLs (eg. '{bucket}.s3.amazonaws.com/{key}').",
 			),
+			CAP_S3_BOOTSTRAP: boolString(true),
 
 			/// CloudFront configuration
 			// Configure these if you'd like to serve assets from the default bucket via CloudFront

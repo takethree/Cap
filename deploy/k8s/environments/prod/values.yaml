@@ -12,9 +12,21 @@ mediaServer:
     tag: latest
     pullPolicy: IfNotPresent
 
+serviceAccount:
+  name: cap-web
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::159207264407:role/IRSA-takethree-cap-web
+
+storage:
+  bucket: takethree-cap-production-159207264407-us-east-2
+  region: us-east-2
+  publicEndpoint: ""
+  internalEndpoint: ""
+  pathStyle: "false"
+  bootstrap: "false"
+
 minio:
-  publicEndpoint: https://cap-s3.take3tech.dev
+  enabled: false
 
 ingress:
   webHost: cap.take3tech.dev
-  s3Host: cap-s3.take3tech.dev

@@ -35,6 +35,10 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- default (printf "%s-runtime" (include "cap.fullname" .)) .Values.runtimeSecret.name -}}
 {{- end -}}
 
+{{- define "cap.serviceAccountName" -}}
+{{- default (include "cap.fullname" .) .Values.serviceAccount.name -}}
+{{- end -}}
+
 {{- define "cap.webName" -}}
 {{- include "cap.fullname" . }}-web
 {{- end -}}

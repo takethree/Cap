@@ -1,3 +1,7 @@
+{{- $internalEndpoint := .Values.storage.internalEndpoint -}}
+{{- if and (not $internalEndpoint) .Values.minio.enabled -}}
+{{- $internalEndpoint = printf "http://%s:9000" (include "cap.minioName" .) -}}
+{{- end -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -37,6 +41,7 @@ spec:
         {{- include "cap.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: web
     spec:
+      serviceAccountName: {{ include "cap.serviceAccountName" . }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -49,7 +54,9 @@ spec:
             - -c
             - |
               until nc -z {{ include "cap.mysqlName" . }} 3306; do sleep 2; done
+              {{- if .Values.minio.enabled }}
               until wget -q --spider http://{{ include "cap.minioName" . }}:9000/minio/health/ready; do sleep 2; done
+              {{- end }}
       containers:
         - name: web
           image: "{{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}"
@@ -81,6 +88,7 @@ spec:
                 secretKeyRef:
                   name: {{ include "cap.secretName" . }}
                   key: {{ .Values.runtimeSecret.keys.mediaServerWebhookSecret }}
+            {{- if .Values.minio.enabled }}
             - name: CAP_AWS_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
@@ -91,6 +99,7 @@ spec:
                 secretKeyRef:
                   name: {{ include "cap.secretName" . }}
                   key: {{ .Values.runtimeSecret.keys.minioRootPassword }}
+            {{- end }}
             - name: NODE_ENV
               valueFrom:
                 configMapKeyRef:
@@ -126,16 +135,25 @@ spec:
                 configMapKeyRef:
                   name: {{ include "cap.configName" . }}
                   key: CAP_AWS_REGION
+            - name: CAP_S3_BOOTSTRAP
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: CAP_S3_BOOTSTRAP
+            {{- with .Values.storage.publicEndpoint }}
             - name: S3_PUBLIC_ENDPOINT
               valueFrom:
                 configMapKeyRef:
                   name: {{ include "cap.configName" . }}
                   key: S3_PUBLIC_ENDPOINT
+            {{- end }}
+            {{- with $internalEndpoint }}
             - name: S3_INTERNAL_ENDPOINT
               valueFrom:
                 configMapKeyRef:
                   name: {{ include "cap.configName" . }}
                   key: S3_INTERNAL_ENDPOINT
+            {{- end }}
             - name: S3_PATH_STYLE
               valueFrom:
                 configMapKeyRef:

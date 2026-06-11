@@ -1,3 +1,7 @@
+{{- $internalEndpoint := .Values.storage.internalEndpoint -}}
+{{- if and (not $internalEndpoint) .Values.minio.enabled -}}
+{{- $internalEndpoint = printf "http://%s:9000" (include "cap.minioName" .) -}}
+{{- end -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,11 +15,16 @@ data:
   NEXTAUTH_URL: {{ default .Values.web.publicUrl .Values.web.nextauthUrl | quote }}
   NEXT_PUBLIC_WEB_URL: {{ .Values.web.publicUrl | quote }}
   NEXT_PUBLIC_DOCKER_BUILD: "true"
-  CAP_AWS_BUCKET: {{ .Values.minio.bucket | quote }}
-  CAP_AWS_REGION: {{ .Values.minio.region | quote }}
-  S3_PUBLIC_ENDPOINT: {{ .Values.minio.publicEndpoint | quote }}
-  S3_INTERNAL_ENDPOINT: {{ printf "http://%s:9000" (include "cap.minioName" .) | quote }}
-  S3_PATH_STYLE: {{ .Values.minio.pathStyle | quote }}
+  CAP_AWS_BUCKET: {{ .Values.storage.bucket | quote }}
+  CAP_AWS_REGION: {{ .Values.storage.region | quote }}
+  CAP_S3_BOOTSTRAP: {{ .Values.storage.bootstrap | quote }}
+  {{- with .Values.storage.publicEndpoint }}
+  S3_PUBLIC_ENDPOINT: {{ . | quote }}
+  {{- end }}
+  {{- with $internalEndpoint }}
+  S3_INTERNAL_ENDPOINT: {{ . | quote }}
+  {{- end }}
+  S3_PATH_STYLE: {{ .Values.storage.pathStyle | quote }}
   MEDIA_SERVER_URL: {{ printf "http://%s:3456" (include "cap.mediaServerName" .) | quote }}
   MEDIA_SERVER_WEBHOOK_URL: {{ printf "http://%s:3000" (include "cap.webName" .) | quote }}
   CAP_VIDEOS_DEFAULT_PUBLIC: {{ .Values.web.defaultVideosPublic | quote }}
