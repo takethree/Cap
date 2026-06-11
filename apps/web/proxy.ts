@@ -24,6 +24,10 @@ export async function proxy(request: NextRequest) {
 	const url = new URL(request.url);
 	const path = url.pathname;
 
+	if (path.startsWith("/.well-known/workflow/")) {
+		return NextResponse.next();
+	}
+
 	if (path === "/" && request.cookies.has("next-auth.session-token")) {
 		return NextResponse.redirect(new URL("/dashboard/caps", url.origin));
 	}
