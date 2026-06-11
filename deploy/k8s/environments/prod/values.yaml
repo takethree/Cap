@@ -15,6 +15,13 @@ serviceAccount:
   name: cap-web
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::159207264407:role/IRSA-takethree-cap-web
+providerKeys:
+  enabled: true
+workflow:
+  enabled: true
+cron:
+  staleDesktopSegments:
+    enabled: true
 storage:
   bucket: takethree-cap-production-159207264407-us-east-2
   region: us-east-2

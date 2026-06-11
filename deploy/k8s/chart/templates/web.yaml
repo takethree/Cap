@@ -68,6 +68,8 @@ spec:
               containerPort: 3000
               protocol: TCP
           env:
+            - name: PORT
+              value: "3000"
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -90,6 +92,52 @@ spec:
                 secretKeyRef:
                   name: {{ include "cap.secretName" . }}
                   key: {{ .Values.runtimeSecret.keys.mediaServerWebhookSecret }}
+            {{- if .Values.providerKeys.enabled }}
+            - name: DEEPGRAM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.deepgramApiKey }}
+            - name: GROQ_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.groqApiKey }}
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.openaiApiKey }}
+            - name: REPLICATE_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.replicateApiToken }}
+            {{- end }}
+            {{- if .Values.workflow.enabled }}
+            - name: WORKFLOW_TARGET_WORLD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.workflowTargetWorld }}
+            - name: WORKFLOW_POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.workflowPostgresUrl }}
+            - name: WORKFLOW_POSTGRES_JOB_PREFIX
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.workflowPostgresJobPrefix }}
+            {{- end }}
+            {{- if or .Values.cron.staleDesktopSegments.enabled .Values.cron.developerStorage.enabled }}
+            - name: CRON_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.cronSecret }}
+            {{- end }}
             {{- if .Values.minio.enabled }}
             - name: CAP_AWS_ACCESS_KEY
               valueFrom:

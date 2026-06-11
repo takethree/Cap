@@ -1,0 +1,78 @@
+{{- if and .Values.workflow.enabled .Values.workflow.setup.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "cap.fullname" . }}-workflow-postgres-setup
+  labels:
+    {{- include "cap.labels" . | nindent 4 }}
+    app.kubernetes.io/component: workflow-postgres-setup
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+    argocd.argoproj.io/sync-wave: "-1"
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: {{ .Values.workflow.setup.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.workflow.setup.activeDeadlineSeconds }}
+  ttlSecondsAfterFinished: {{ .Values.workflow.setup.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        {{- include "cap.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: workflow-postgres-setup
+    spec:
+      serviceAccountName: {{ include "cap.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: Never
+      containers:
+        - name: workflow-postgres-setup
+          image: "{{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}"
+          imagePullPolicy: {{ .Values.web.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - |
+              if [ -f apps/web/node_modules/@workflow/world-postgres/bin/setup.js ]; then
+                node apps/web/node_modules/@workflow/world-postgres/bin/setup.js
+              elif [ -f node_modules/@workflow/world-postgres/bin/setup.js ]; then
+                node node_modules/@workflow/world-postgres/bin/setup.js
+              elif command -v workflow-postgres-setup >/dev/null 2>&1; then
+                workflow-postgres-setup
+              else
+                echo "workflow-postgres-setup not found"
+                exit 1
+              fi
+          env:
+            - name: WORKFLOW_TARGET_WORLD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.workflowTargetWorld }}
+            - name: WORKFLOW_POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.workflowPostgresUrl }}
+            - name: WORKFLOW_POSTGRES_JOB_PREFIX
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.workflowPostgresJobPrefix }}
+          {{- with .Values.workflow.setup.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      securityContext:
+        fsGroup: 1001
+{{- end }}
