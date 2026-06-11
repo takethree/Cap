@@ -63,7 +63,6 @@ jobs:
             NEXT_PUBLIC_DOCKER_BUILD=true
             NEXT_PUBLIC_WEB_URL=${{ env.PUBLIC_WEB_URL }}
           cache-from: type=gha,scope=cap-web
-          cache-to: type=gha,mode=max,scope=cap-web
 
       - name: Build and push media server image
         uses: docker/build-push-action@v6
@@ -76,7 +75,6 @@ jobs:
             ${{ steps.ecr.outputs.registry }}/${{ env.MEDIA_SERVER_REPOSITORY }}:sha-${{ github.sha }}
             ${{ steps.ecr.outputs.registry }}/${{ env.MEDIA_SERVER_REPOSITORY }}:take-three
           cache-from: type=gha,scope=cap-media-server
-          cache-to: type=gha,mode=max,scope=cap-media-server
 
       - name: Install yq
         run: |
