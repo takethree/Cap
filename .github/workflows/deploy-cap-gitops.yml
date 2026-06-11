@@ -1,0 +1,107 @@
+name: "Deploy Cap with GitOps"
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "deploy/k8s/environments/prod/values.yaml"
+
+concurrency:
+  group: deploy-cap-gitops-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: us-east-2
+  AWS_ACCOUNT_ID: "159207264407"
+  AWS_ROLE_ARN: arn:aws:iam::159207264407:role/cap-github-actions-ecr-publisher
+  WEB_REPOSITORY: cap-web
+  MEDIA_SERVER_REPOSITORY: cap-media-server
+  PUBLIC_WEB_URL: https://cap.take3tech.dev
+  VALUES_FILE: deploy/k8s/environments/prod/values.yaml
+
+jobs:
+  build-and-publish:
+    name: Build and Publish Images
+    runs-on: ubuntu-24.04
+    environment: production
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/${{ env.WEB_REPOSITORY }}:sha-${{ github.sha }}
+            ${{ steps.ecr.outputs.registry }}/${{ env.WEB_REPOSITORY }}:main
+          build-args: |
+            NEXT_PUBLIC_DOCKER_BUILD=true
+            NEXT_PUBLIC_WEB_URL=${{ env.PUBLIC_WEB_URL }}
+          cache-from: type=gha,scope=cap-web
+          cache-to: type=gha,mode=max,scope=cap-web
+
+      - name: Build and push media server image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./apps/media-server
+          file: ./apps/media-server/Dockerfile.standalone
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/${{ env.MEDIA_SERVER_REPOSITORY }}:sha-${{ github.sha }}
+            ${{ steps.ecr.outputs.registry }}/${{ env.MEDIA_SERVER_REPOSITORY }}:main
+          cache-from: type=gha,scope=cap-media-server
+          cache-to: type=gha,mode=max,scope=cap-media-server
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Update production image tags
+        env:
+          IMAGE_TAG: sha-${{ github.sha }}
+          WEB_IMAGE_REPOSITORY: ${{ steps.ecr.outputs.registry }}/${{ env.WEB_REPOSITORY }}
+          MEDIA_SERVER_IMAGE_REPOSITORY: ${{ steps.ecr.outputs.registry }}/${{ env.MEDIA_SERVER_REPOSITORY }}
+        run: |
+          yq -i '.web.image.repository = strenv(WEB_IMAGE_REPOSITORY)' "$VALUES_FILE"
+          yq -i '.web.image.tag = strenv(IMAGE_TAG)' "$VALUES_FILE"
+          yq -i '.mediaServer.image.repository = strenv(MEDIA_SERVER_IMAGE_REPOSITORY)' "$VALUES_FILE"
+          yq -i '.mediaServer.image.tag = strenv(IMAGE_TAG)' "$VALUES_FILE"
+
+      - name: Commit GitOps image update
+        run: |
+          if git diff --quiet -- "$VALUES_FILE"; then
+            echo "No image tag changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$VALUES_FILE"
+          git commit -m "chore(deploy): update Cap image tags"
+          git push

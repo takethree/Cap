@@ -1,0 +1,20 @@
+web:
+  image:
+    repository: ghcr.io/capsoftware/cap-web
+    tag: latest
+    pullPolicy: IfNotPresent
+  publicUrl: https://cap.take3tech.dev
+  nextauthUrl: https://cap.take3tech.dev
+
+mediaServer:
+  image:
+    repository: ghcr.io/capsoftware/cap-media-server
+    tag: latest
+    pullPolicy: IfNotPresent
+
+minio:
+  publicEndpoint: https://cap-s3.take3tech.dev
+
+ingress:
+  webHost: cap.take3tech.dev
+  s3Host: cap-s3.take3tech.dev

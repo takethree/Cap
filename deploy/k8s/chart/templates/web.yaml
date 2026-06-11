@@ -1,0 +1,195 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cap.webName" . }}
+  labels:
+    {{- include "cap.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "cap.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cap.webName" . }}
+  labels:
+    {{- include "cap.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  replicas: {{ .Values.web.replicas }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "cap.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        {{- include "cap.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: web
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+        - name: wait-for-dependencies
+          image: {{ .Values.web.initImage | quote }}
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z {{ include "cap.mysqlName" . }} 3306; do sleep 2; done
+              until wget -q --spider http://{{ include "cap.minioName" . }}:9000/minio/health/ready; do sleep 2; done
+      containers:
+        - name: web
+          image: "{{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}"
+          imagePullPolicy: {{ .Values.web.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.mysqlPassword }}
+            - name: DATABASE_URL
+              value: {{ printf "mysql://%s:$(MYSQL_PASSWORD)@%s:3306/%s" .Values.mysql.auth.username (include "cap.mysqlName" .) .Values.mysql.auth.database | quote }}
+            - name: DATABASE_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.databaseEncryptionKey }}
+            - name: NEXTAUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.nextauthSecret }}
+            - name: MEDIA_SERVER_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.mediaServerWebhookSecret }}
+            - name: CAP_AWS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.minioRootUser }}
+            - name: CAP_AWS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.minioRootPassword }}
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: NODE_ENV
+            - name: WEB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: WEB_URL
+            - name: NEXTAUTH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: NEXTAUTH_URL
+            - name: NEXT_PUBLIC_WEB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: NEXT_PUBLIC_WEB_URL
+            - name: NEXT_PUBLIC_DOCKER_BUILD
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: NEXT_PUBLIC_DOCKER_BUILD
+            - name: CAP_AWS_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: CAP_AWS_BUCKET
+            - name: CAP_AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: CAP_AWS_REGION
+            - name: S3_PUBLIC_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: S3_PUBLIC_ENDPOINT
+            - name: S3_INTERNAL_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: S3_INTERNAL_ENDPOINT
+            - name: S3_PATH_STYLE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: S3_PATH_STYLE
+            - name: MEDIA_SERVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: MEDIA_SERVER_URL
+            - name: MEDIA_SERVER_WEBHOOK_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: MEDIA_SERVER_WEBHOOK_URL
+            - name: CAP_VIDEOS_DEFAULT_PUBLIC
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: CAP_VIDEOS_DEFAULT_PUBLIC
+            {{- if .Values.web.allowedSignupDomains }}
+            - name: CAP_ALLOWED_SIGNUP_DOMAINS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: CAP_ALLOWED_SIGNUP_DOMAINS
+            {{- end }}
+            {{- with .Values.web.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            {{- toYaml .Values.web.resources | nindent 12 }}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      securityContext:
+        fsGroup: 1001
