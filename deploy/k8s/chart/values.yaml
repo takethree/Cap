@@ -22,6 +22,14 @@ runtimeSecret:
     mediaServerWebhookSecret: media-server-webhook-secret
     smtpUsername: smtp-username
     smtpPassword: smtp-password
+    openaiApiKey: openai-api-key
+    groqApiKey: groq-api-key
+    deepgramApiKey: deepgram-api-key
+    replicateApiToken: replicate-api-token
+    workflowTargetWorld: workflow-target-world
+    workflowPostgresUrl: workflow-postgres-url
+    workflowPostgresJobPrefix: workflow-postgres-job-prefix
+    cronSecret: cron-secret
   values:
     mysqlPassword: ""
     mysqlRootPassword: ""
@@ -32,6 +40,44 @@ runtimeSecret:
     mediaServerWebhookSecret: ""
     smtpUsername: ""
     smtpPassword: ""
+    openaiApiKey: ""
+    groqApiKey: ""
+    deepgramApiKey: ""
+    replicateApiToken: ""
+    workflowTargetWorld: ""
+    workflowPostgresUrl: ""
+    workflowPostgresJobPrefix: ""
+    cronSecret: ""
+
+providerKeys:
+  enabled: false
+
+workflow:
+  enabled: false
+  setup:
+    enabled: true
+    backoffLimit: 3
+    activeDeadlineSeconds: 600
+    ttlSecondsAfterFinished: 86400
+    resources: {}
+
+cron:
+  image:
+    repository: curlimages/curl
+    tag: "8.11.1"
+    pullPolicy: IfNotPresent
+  requestTimeoutSeconds: 120
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  backoffLimit: 2
+  activeDeadlineSeconds: 180
+  resources: {}
+  staleDesktopSegments:
+    enabled: false
+    schedule: "*/15 * * * *"
+  developerStorage:
+    enabled: false
+    schedule: "5 0 * * *"
 
 storage:
   bucket: cap

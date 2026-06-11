@@ -11,9 +11,12 @@ import {
 import { migrateDb } from "@cap/database/migrate";
 import { buildEnv, serverEnv } from "@cap/env";
 
+const workflowStartupDelayMs = 5000;
+
 export async function register() {
 	if (process.env.NEXT_PUBLIC_IS_CAP) return;
 
+	setTimeout(() => startWorkflowWorld(), workflowStartupDelayMs);
 	console.log("Waiting 5 seconds to run migrations");
 	// Function to trigger migrations with retry logic
 	const triggerMigrations = async (retryCount = 0, maxRetries = 3) => {
@@ -38,6 +41,49 @@ export async function register() {
 	// Add a timeout to trigger migrations after 5 seconds on server start
 	setTimeout(() => triggerMigrations(), 5000);
 	if (serverEnv().CAP_S3_BOOTSTRAP) setTimeout(() => createS3Bucket(), 5000);
+}
+
+async function startWorkflowWorld(retryCount = 0, maxRetries = 5) {
+	if (
+		!process.env.WORKFLOW_TARGET_WORLD ||
+		process.env.NEXT_RUNTIME === "edge"
+	) {
+		return;
+	}
+
+	try {
+		if (process.env.WORKFLOW_TARGET_WORLD === "@workflow/world-postgres") {
+			const [{ setWorld }, { createWorld }] = await Promise.all([
+				import("workflow/runtime"),
+				import("@workflow/world-postgres"),
+			]);
+
+			setWorld(createWorld());
+		}
+
+		const { getWorld } = await import("workflow/runtime");
+		await getWorld().start?.();
+		console.log("Workflow world started");
+	} catch (error) {
+		console.error(
+			`Error starting workflow world (attempt ${retryCount + 1}):`,
+			error,
+		);
+		if (retryCount < maxRetries - 1) {
+			console.log(
+				`Retrying workflow world startup in 5 seconds... (${retryCount + 1}/${maxRetries})`,
+			);
+			setTimeout(
+				() => startWorkflowWorld(retryCount + 1, maxRetries),
+				workflowStartupDelayMs,
+			);
+		} else {
+			console.error(
+				`All ${maxRetries} workflow world startup attempts failed.`,
+			);
+			process.exit(1);
+		}
+	}
 }
 
 async function createS3Bucket() {

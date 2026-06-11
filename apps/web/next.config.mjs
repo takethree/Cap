@@ -16,11 +16,29 @@ const ffmpegTracingIncludes = [
 	"./node_modules/.pnpm/ffmpeg-static@5.3.0/node_modules/ffmpeg-static/ffmpeg",
 ];
 
+const workflowPostgresTracingIncludes = [
+	"./node_modules/@workflow/world-postgres/bin/**/*",
+	"./node_modules/@workflow/world-postgres/dist/**/*",
+	"./node_modules/@workflow/world-postgres/src/drizzle/migrations/**/*",
+	"./node_modules/graphile-worker/**/*",
+	"./node_modules/pg/**/*",
+];
+
 const nextConfig = {
 	reactStrictMode: true,
-	serverExternalPackages: ["ffmpeg-static", "prettier"],
+	serverExternalPackages: [
+		"@workflow/world-postgres",
+		"ffmpeg-static",
+		"graphile-worker",
+		"pg",
+		"prettier",
+	],
 	outputFileTracingIncludes: {
-		"/.well-known/workflow/v1/step": ffmpegTracingIncludes,
+		"/*": workflowPostgresTracingIncludes,
+		"/.well-known/workflow/v1/step": [
+			...ffmpegTracingIncludes,
+			...workflowPostgresTracingIncludes,
+		],
 		"/api/tools/loom-download": ffmpegTracingIncludes,
 	},
 	transpilePackages: [

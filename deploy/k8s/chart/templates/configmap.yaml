@@ -39,7 +39,7 @@ data:
   {{- end }}
   {{- end }}
   MEDIA_SERVER_URL: {{ printf "http://%s:3456" (include "cap.mediaServerName" .) | quote }}
-  MEDIA_SERVER_WEBHOOK_URL: {{ printf "http://%s:3000" (include "cap.webName" .) | quote }}
+  MEDIA_SERVER_WEBHOOK_URL: {{ printf "http://%s" (include "cap.webName" .) | quote }}
   CAP_VIDEOS_DEFAULT_PUBLIC: {{ .Values.web.defaultVideosPublic | quote }}
   {{- if .Values.web.allowedSignupDomains }}
   CAP_ALLOWED_SIGNUP_DOMAINS: {{ .Values.web.allowedSignupDomains | quote }}

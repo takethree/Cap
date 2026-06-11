@@ -145,6 +145,13 @@ function createServerEnv() {
 					"Base URL for media server webhooks (use host.docker.internal for Docker setups)",
 				),
 
+			WORKFLOW_TARGET_WORLD: z.string().optional(),
+			WORKFLOW_POSTGRES_URL: z.string().optional(),
+			WORKFLOW_POSTGRES_JOB_PREFIX: z.string().optional(),
+			WORKFLOW_POSTGRES_WORKER_CONCURRENCY: z.string().optional(),
+			WORKFLOW_POSTGRES_MAX_POOL_SIZE: z.string().optional(),
+			CRON_SECRET: z.string().optional(),
+
 			/// Ignore
 			NODE_ENV: z.string(),
 			WORKFLOWS_RPC_URL: z.string().optional(),
