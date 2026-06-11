@@ -34,7 +34,7 @@
 ## 4. Pull Requests And Deployment Order
 
 - [ ] 4.1 Open infrastructure PR with LM-15612 title, summary, plan output, and secret rotation locations.
-- [ ] 4.2 Open Cap PR with LM-15612 title, app changes, Helm changes, and deployment notes.
+- [x] 4.2 Open Cap PR with LM-15612 title, app changes, Helm changes, and deployment notes.
 - [ ] 4.3 Merge/apply infrastructure before Cap chart/app rollout.
 - [ ] 4.4 Verify GitHub Actions produces immutable Cap image tags and GitOps values update.
 - [ ] 4.5 Verify Argo CD sync applies the new runtime secret, setup job, deployment, and CronJobs.
