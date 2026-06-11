@@ -1,23 +1,20 @@
 web:
   image:
-    repository: ghcr.io/capsoftware/cap-web
-    tag: latest
+    repository: 159207264407.dkr.ecr.us-east-2.amazonaws.com/cap-web
+    tag: sha-0f52660e81dd4947ca330319f99d247a74a25c8f
     pullPolicy: IfNotPresent
   publicUrl: https://cap.take3tech.dev
   nextauthUrl: https://cap.take3tech.dev
   allowedSignupDomains: take3tech.com
-
 mediaServer:
   image:
-    repository: ghcr.io/capsoftware/cap-media-server
-    tag: latest
+    repository: 159207264407.dkr.ecr.us-east-2.amazonaws.com/cap-media-server
+    tag: sha-0f52660e81dd4947ca330319f99d247a74a25c8f
     pullPolicy: IfNotPresent
-
 serviceAccount:
   name: cap-web
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::159207264407:role/IRSA-takethree-cap-web
-
 storage:
   bucket: takethree-cap-production-159207264407-us-east-2
   region: us-east-2
@@ -25,7 +22,6 @@ storage:
   internalEndpoint: ""
   pathStyle: "false"
   bootstrap: "false"
-
 email:
   provider: smtp
   from: Cap <no-reply@take3tech.com>
@@ -34,9 +30,7 @@ email:
     port: "587"
     secure: "false"
     requireTls: "true"
-
 minio:
   enabled: false
-
 ingress:
   webHost: cap.take3tech.dev
