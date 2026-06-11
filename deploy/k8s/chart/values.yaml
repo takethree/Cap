@@ -3,6 +3,12 @@ fullnameOverride: ""
 
 imagePullSecrets: []
 
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+  automountServiceAccountToken: true
+
 runtimeSecret:
   create: false
   name: cap-runtime
@@ -22,6 +28,14 @@ runtimeSecret:
     databaseEncryptionKey: ""
     nextauthSecret: ""
     mediaServerWebhookSecret: ""
+
+storage:
+  bucket: cap
+  region: us-east-1
+  publicEndpoint: http://localhost:9000
+  internalEndpoint: ""
+  pathStyle: "true"
+  bootstrap: "true"
 
 web:
   replicas: 1
@@ -81,14 +95,11 @@ mysql:
       memory: 1Gi
 
 minio:
+  enabled: true
   image:
     repository: minio/minio
     tag: latest
     pullPolicy: IfNotPresent
-  bucket: cap
-  region: us-east-1
-  publicEndpoint: http://localhost:9000
-  pathStyle: "true"
   persistence:
     storageClassName: gp3
     size: 100Gi
