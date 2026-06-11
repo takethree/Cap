@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cap.configName" . }}
+  labels:
+    {{- include "cap.labels" . | nindent 4 }}
+    app.kubernetes.io/component: config
+data:
+  NODE_ENV: {{ .Values.web.nodeEnv | quote }}
+  WEB_URL: {{ .Values.web.publicUrl | quote }}
+  NEXTAUTH_URL: {{ default .Values.web.publicUrl .Values.web.nextauthUrl | quote }}
+  NEXT_PUBLIC_WEB_URL: {{ .Values.web.publicUrl | quote }}
+  NEXT_PUBLIC_DOCKER_BUILD: "true"
+  CAP_AWS_BUCKET: {{ .Values.minio.bucket | quote }}
+  CAP_AWS_REGION: {{ .Values.minio.region | quote }}
+  S3_PUBLIC_ENDPOINT: {{ .Values.minio.publicEndpoint | quote }}
+  S3_INTERNAL_ENDPOINT: {{ printf "http://%s:9000" (include "cap.minioName" .) | quote }}
+  S3_PATH_STYLE: {{ .Values.minio.pathStyle | quote }}
+  MEDIA_SERVER_URL: {{ printf "http://%s:3456" (include "cap.mediaServerName" .) | quote }}
+  MEDIA_SERVER_WEBHOOK_URL: {{ printf "http://%s:3000" (include "cap.webName" .) | quote }}
+  CAP_VIDEOS_DEFAULT_PUBLIC: {{ .Values.web.defaultVideosPublic | quote }}
+  {{- if .Values.web.allowedSignupDomains }}
+  CAP_ALLOWED_SIGNUP_DOMAINS: {{ .Values.web.allowedSignupDomains | quote }}
+  {{- end }}
+  {{- range $key, $value := .Values.web.configEnv }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
