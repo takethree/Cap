@@ -16,6 +16,7 @@ ENV NEXT_PUBLIC_WEB_URL=$NEXT_PUBLIC_WEB_URL
 
 RUN pnpm run build:web
 
+RUN pnpm --filter @cap/web deploy --prod /app/.cap-web-production
 
 # 3. Production image, copy all the files and run next
 FROM base AS runner
@@ -28,6 +29,8 @@ RUN adduser -S nextjs -u 1001
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+RUN rm -rf ./apps/web/node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/.cap-web-production/node_modules ./apps/web/node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 COPY --from=builder --chown=nextjs:nodejs /app/packages/database/migrations ./apps/web/migrations
