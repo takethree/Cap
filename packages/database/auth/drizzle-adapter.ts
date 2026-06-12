@@ -1,8 +1,13 @@
 import { STRIPE_AVAILABLE, stripe } from "@cap/utils";
 import { type ImageUpload, Organisation, User } from "@cap/web-domain";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import type { MySql2Database } from "drizzle-orm/mysql2";
-import type { Adapter } from "next-auth/adapters";
+import type {
+	Adapter,
+	AdapterAccount,
+	AdapterSession,
+	AdapterUser,
+} from "next-auth/adapters";
 import type Stripe from "stripe";
 import { nanoId } from "../helpers.ts";
 import {
@@ -15,9 +20,14 @@ import {
 	verificationTokens,
 } from "../schema.ts";
 
+export const getDefaultSignupOrganizationId = () => {
+	const value = process.env.CAP_DEFAULT_SIGNUP_ORGANIZATION_ID?.trim();
+	return value ? Organisation.OrganisationId.make(value) : null;
+};
+
 export function DrizzleAdapter(db: MySql2Database): Adapter {
 	return {
-		async createUser(userData: any) {
+		async createUser(userData: Omit<AdapterUser, "id">) {
 			const normalizedEmail = (userData.email as string)?.toLowerCase() ?? "";
 			const userId = User.UserId.make(nanoId());
 			await db.transaction(async (tx) => {
@@ -37,12 +47,50 @@ export function DrizzleAdapter(db: MySql2Database): Adapter {
 					email: normalizedEmail,
 					emailVerified: userData.emailVerified,
 					name: userData.name,
-					image: userData.image,
+					image: userData.image as ImageUpload.ImageUrlOrKey | null,
 					activeOrganizationId: Organisation.OrganisationId.make(""),
 				});
 
 				if (pendingInvite) {
 					return;
+				}
+
+				const defaultSignupOrganizationId = getDefaultSignupOrganizationId();
+				if (defaultSignupOrganizationId) {
+					const [defaultSignupOrganization] = await tx
+						.select({ id: organizations.id })
+						.from(organizations)
+						.where(
+							and(
+								eq(organizations.id, defaultSignupOrganizationId),
+								isNull(organizations.tombstoneAt),
+							),
+						)
+						.limit(1);
+
+					if (defaultSignupOrganization) {
+						await tx.insert(organizationMembers).values({
+							id: nanoId(),
+							organizationId: defaultSignupOrganization.id,
+							userId,
+							role: "member",
+						});
+
+						await tx
+							.update(users)
+							.set({
+								activeOrganizationId: defaultSignupOrganization.id,
+								defaultOrgId: defaultSignupOrganization.id,
+								onboardingSteps: {
+									organizationSetup: true,
+									customDomain: true,
+									inviteTeam: true,
+								},
+							})
+							.where(eq(users.id, userId));
+
+						return;
+					}
 				}
 
 				const organizationId = Organisation.OrganisationId.make(nanoId());
@@ -202,7 +250,7 @@ export function DrizzleAdapter(db: MySql2Database): Adapter {
 		async deleteUser(userId) {
 			await db.delete(users).where(eq(users.id, User.UserId.make(userId)));
 		},
-		async linkAccount(account: any) {
+		async linkAccount(account: AdapterAccount) {
 			await db.insert(accounts).values({
 				id: User.UserId.make(nanoId()),
 				userId: account.userId,
@@ -218,7 +266,10 @@ export function DrizzleAdapter(db: MySql2Database): Adapter {
 				token_type: account.token_type,
 			});
 		},
-		async unlinkAccount({ providerAccountId, provider }: any) {
+		async unlinkAccount({
+			providerAccountId,
+			provider,
+		}: Pick<AdapterAccount, "provider" | "providerAccountId">) {
 			await db
 				.delete(accounts)
 				.where(
@@ -272,10 +323,12 @@ export function DrizzleAdapter(db: MySql2Database): Adapter {
 				},
 			};
 		},
-		async updateSession(session: any) {
+		async updateSession(
+			session: Partial<AdapterSession> & Pick<AdapterSession, "sessionToken">,
+		) {
 			await db
 				.update(sessions)
-				.set(session as any)
+				.set(session as typeof sessions.$inferInsert)
 				.where(eq(sessions.sessionToken, session.sessionToken));
 			const rows = await db
 				.select()

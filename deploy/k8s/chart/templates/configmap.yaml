@@ -44,6 +44,9 @@ data:
   {{- if .Values.web.allowedSignupDomains }}
   CAP_ALLOWED_SIGNUP_DOMAINS: {{ .Values.web.allowedSignupDomains | quote }}
   {{- end }}
+  {{- if .Values.web.defaultSignupOrganizationId }}
+  CAP_DEFAULT_SIGNUP_ORGANIZATION_ID: {{ .Values.web.defaultSignupOrganizationId | quote }}
+  {{- end }}
   {{- range $key, $value := .Values.web.configEnv }}
   {{ $key }}: {{ $value | quote }}
   {{- end }}
