@@ -89,6 +89,12 @@ function createServerEnv() {
 				.string()
 				.optional()
 				.describe("Comma-separated list of permitted signup domains"),
+			CAP_DEFAULT_SIGNUP_ORGANIZATION_ID: z
+				.string()
+				.optional()
+				.describe(
+					"Existing organization id that new non-invite signups should join",
+				),
 
 			/// AI providers
 			DEEPGRAM_API_KEY: z.string().optional().describe("Audio transcription"),

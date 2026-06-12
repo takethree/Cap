@@ -285,6 +285,13 @@ spec:
                   name: {{ include "cap.configName" . }}
                   key: CAP_ALLOWED_SIGNUP_DOMAINS
             {{- end }}
+            {{- if .Values.web.defaultSignupOrganizationId }}
+            - name: CAP_DEFAULT_SIGNUP_ORGANIZATION_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: CAP_DEFAULT_SIGNUP_ORGANIZATION_ID
+            {{- end }}
             {{- with .Values.web.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

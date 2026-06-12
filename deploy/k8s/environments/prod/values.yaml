@@ -6,6 +6,7 @@ web:
   publicUrl: https://cap.take3tech.dev
   nextauthUrl: https://cap.take3tech.dev
   allowedSignupDomains: take3tech.com
+  defaultSignupOrganizationId: m0tmhvagbmea7aj
 mediaServer:
   image:
     repository: 159207264407.dkr.ecr.us-east-2.amazonaws.com/cap-media-server
