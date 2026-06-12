@@ -1,6 +1,5 @@
 "use client";
 
-import { buildEnv } from "@cap/env";
 import {
 	Command,
 	CommandGroup,
@@ -9,6 +8,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@cap/ui";
+import { isCapCloud } from "@cap/utils";
 import { faBell } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -128,7 +128,7 @@ const Top = () => {
 				<DashboardSearch />
 			</div>
 			<div className="flex gap-4 justify-end items-center shrink-0">
-				{buildEnv.NEXT_PUBLIC_IS_CAP && <ReferButton />}
+				{isCapCloud && <ReferButton />}
 				<div className="hidden relative lg:flex">
 					<button
 						type="button"
@@ -202,7 +202,7 @@ const User = () => {
 					setUpgradeModalOpen(true);
 				},
 				iconClassName: "text-amber-400 group-hover:text-amber-500",
-				showCondition: buildEnv.NEXT_PUBLIC_IS_CAP && !user.isPro,
+				showCondition: isCapCloud && !user.isPro,
 			},
 			{
 				name: "Earn 40% Referral",
@@ -210,7 +210,7 @@ const User = () => {
 				href: "/dashboard/refer",
 				onClick: () => setMenuOpen(false),
 				iconClassName: "text-gray-11 group-hover:text-gray-12",
-				showCondition: buildEnv.NEXT_PUBLIC_IS_CAP,
+				showCondition: isCapCloud,
 			},
 			{
 				name: "Chat Support",

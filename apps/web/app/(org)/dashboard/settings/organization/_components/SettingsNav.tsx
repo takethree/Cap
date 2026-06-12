@@ -1,6 +1,6 @@
 "use client";
 
-import { buildEnv } from "@cap/env";
+import { isCapCloud } from "@cap/utils";
 import clsx from "clsx";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -19,7 +19,7 @@ export function SettingsNav() {
 			href: "/dashboard/settings/organization/integrations",
 		},
 		{
-			label: buildEnv.NEXT_PUBLIC_IS_CAP ? "Billing & Members" : "Members",
+			label: isCapCloud ? "Billing & Members" : "Members",
 			href: "/dashboard/settings/organization/billing",
 		},
 	] as const;

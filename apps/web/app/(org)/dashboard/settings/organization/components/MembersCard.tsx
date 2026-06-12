@@ -1,6 +1,5 @@
 "use client";
 
-import { buildEnv } from "@cap/env";
 import {
 	Button,
 	Card,
@@ -16,6 +15,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@cap/ui";
+import { isCapCloud } from "@cap/utils";
 import { faUser } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation } from "@tanstack/react-query";
@@ -247,7 +247,7 @@ export const MembersCard = ({ setIsInviteDialogOpen }: MembersCardProps) => {
 							<TableHead>Member</TableHead>
 							<TableHead>Email</TableHead>
 							<TableHead>Role</TableHead>
-							{buildEnv.NEXT_PUBLIC_IS_CAP && <TableHead>Pro</TableHead>}
+							{isCapCloud && <TableHead>Pro</TableHead>}
 							<TableHead>Joined</TableHead>
 							<TableHead>Status</TableHead>
 							<TableHead>Actions</TableHead>
@@ -308,7 +308,7 @@ export const MembersCard = ({ setIsInviteDialogOpen }: MembersCardProps) => {
 											/>
 										)}
 									</TableCell>
-									{buildEnv.NEXT_PUBLIC_IS_CAP && (
+									{isCapCloud && (
 										<TableCell>
 											{memberIsOwner ? (
 												<span className="text-xs text-gray-10">-</span>
@@ -377,7 +377,7 @@ export const MembersCard = ({ setIsInviteDialogOpen }: MembersCardProps) => {
 											"member",
 									)}
 								</TableCell>
-								{buildEnv.NEXT_PUBLIC_IS_CAP && <TableCell>-</TableCell>}
+								{isCapCloud && <TableCell>-</TableCell>}
 								<TableCell>-</TableCell>
 								<TableCell>Invited</TableCell>
 								<TableCell>

@@ -8,6 +8,7 @@ import {
 	Input,
 	Switch,
 } from "@cap/ui";
+import { isCapCloud } from "@cap/utils";
 import type { SpaceRuleSource, ViewerSettingKey } from "@cap/web-backend";
 import { type ImageUpload, Space, type Video } from "@cap/web-domain";
 import { faCopy, faShareNodes } from "@fortawesome/free-solid-svg-icons";
@@ -78,6 +79,7 @@ export const SharingDialog: React.FC<SharingDialogProps> = ({
 	const spacesData = propSpacesData || contextSpacesData;
 	const user = propUser ?? contextUser;
 	const onUpgradeRequest = propOnUpgradeRequest ?? setUpgradeModalOpen;
+	const requiresPro = isCapCloud && Boolean(user && !user.isPro);
 	const allowedEmailDomain =
 		activeOrganization?.organization.allowedEmailDomain;
 	const [selectedSpaces, setSelectedSpaces] = useState<Set<string>>(new Set());
@@ -216,7 +218,7 @@ export const SharingDialog: React.FC<SharingDialogProps> = ({
 	};
 
 	const handlePasswordToggle = (checked: boolean) => {
-		if (checked && user && !user.isPro) {
+		if (checked && requiresPro) {
 			onUpgradeRequest?.(true);
 			return;
 		}
