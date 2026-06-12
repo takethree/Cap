@@ -61,9 +61,9 @@ const jobs = new Map<string, Job>();
 const JOB_TTL_MS = 60 * 60 * 1000;
 const STALE_JOB_MS = 15 * 60 * 1000;
 const MAX_JOB_LIFETIME_MS = 60 * 60 * 1000;
-const WEBHOOK_MAX_ATTEMPTS = 3;
-const WEBHOOK_RETRY_BASE_MS = 500;
-const WEBHOOK_TIMEOUT_MS = 5000;
+const WEBHOOK_MAX_ATTEMPTS = 8;
+const WEBHOOK_RETRY_BASE_MS = 1000;
+const WEBHOOK_TIMEOUT_MS = 10000;
 
 // Dynamic concurrency control for video processing.
 //
