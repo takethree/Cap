@@ -44,6 +44,10 @@ data:
   {{- if .Values.web.allowedSignupDomains }}
   CAP_ALLOWED_SIGNUP_DOMAINS: {{ .Values.web.allowedSignupDomains | quote }}
   {{- end }}
+  {{- if .Values.web.autoJoinOrganizationRules }}
+  CAP_AUTO_JOIN_ORGANIZATION_RULES: {{ .Values.web.autoJoinOrganizationRules | quote }}
+  {{- end }}
+  CAP_AUTO_SHARE_NEW_VIDEOS_TO_ORG_ROOT: {{ .Values.web.autoShareNewVideosToOrgRoot | quote }}
   {{- range $key, $value := .Values.web.configEnv }}
   {{ $key }}: {{ $value | quote }}
   {{- end }}

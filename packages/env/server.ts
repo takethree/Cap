@@ -89,6 +89,15 @@ function createServerEnv() {
 				.string()
 				.optional()
 				.describe("Comma-separated list of permitted signup domains"),
+			CAP_AUTO_JOIN_ORGANIZATION_RULES: z
+				.string()
+				.optional()
+				.describe(
+					"Comma-separated domain=organizationId signup auto-join rules",
+				),
+			CAP_AUTO_SHARE_NEW_VIDEOS_TO_ORG_ROOT: boolString(false).describe(
+				"Whether new videos in auto-join organizations are shared to the organization root",
+			),
 
 			/// AI providers
 			DEEPGRAM_API_KEY: z.string().optional().describe("Audio transcription"),
