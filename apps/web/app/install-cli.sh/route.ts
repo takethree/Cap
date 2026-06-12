@@ -9,7 +9,9 @@ const capNoModifyPathParameter = "$" + "{CAP_NO_MODIFY_PATH:-}";
 const shellParameter = "$" + "{SHELL:-/bin/sh}";
 const tmpDirParameter = "$" + "{TMPDIR:-/tmp}";
 
-const script = String.raw`#!/usr/bin/env sh
+import { getCliInstallerBaseUrl } from "@/utils/take3-desktop-release";
+
+const script = (baseUrl: string) => String.raw`#!/usr/bin/env sh
 set -eu
 
 APP_PATH="${capAppPathParameter}"
@@ -231,8 +233,8 @@ find_linux_cli_target() {
 
 install_cap_desktop_macos() {
 	case "$(uname -m)" in
-		arm64|aarch64) DOWNLOAD_URL="https://cap.so/download/apple-silicon" ;;
-		x86_64|amd64) DOWNLOAD_URL="https://cap.so/download/apple-intel" ;;
+		arm64|aarch64) DOWNLOAD_URL="${baseUrl}/download/apple-silicon" ;;
+		x86_64|amd64) DOWNLOAD_URL="${baseUrl}/download/apple-intel" ;;
 		*)
 			echo "Unsupported Mac architecture: $(uname -m)" >&2
 			exit 1
@@ -297,7 +299,7 @@ install_cap_desktop_linux_appimage() {
 	mkdir -p "$APP_DIR"
 
 	echo "Downloading Cap Desktop AppImage..."
-	curl --proto '=https' --tlsv1.2 --retry 3 --retry-delay 1 -fL "https://cap.so/download/linux-appimage" -o "$APPIMAGE_PATH"
+	curl --proto '=https' --tlsv1.2 --retry 3 --retry-delay 1 -fL "${baseUrl}/download/linux-appimage" -o "$APPIMAGE_PATH"
 	chmod +x "$APPIMAGE_PATH"
 
 	if ! prepare_appimage_cli; then
@@ -313,7 +315,7 @@ install_cap_desktop_linux_deb() {
 	trap cleanup_desktop_install EXIT HUP INT TERM
 
 	echo "Downloading Cap Desktop Debian package..."
-	curl --proto '=https' --tlsv1.2 --retry 3 --retry-delay 1 -fL "https://cap.so/download/linux-deb" -o "$DEB_PATH"
+	curl --proto '=https' --tlsv1.2 --retry 3 --retry-delay 1 -fL "${baseUrl}/download/linux-deb" -o "$DEB_PATH"
 
 	if command -v apt-get >/dev/null 2>&1; then
 		run_as_root apt-get install -y "$DEB_PATH"
@@ -341,7 +343,7 @@ install_cap_desktop_linux_rpm() {
 	trap cleanup_desktop_install EXIT HUP INT TERM
 
 	echo "Downloading Cap Desktop RPM package..."
-	curl --proto '=https' --tlsv1.2 --retry 3 --retry-delay 1 -fL "https://cap.so/download/linux-rpm" -o "$RPM_PATH"
+	curl --proto '=https' --tlsv1.2 --retry 3 --retry-delay 1 -fL "${baseUrl}/download/linux-rpm" -o "$RPM_PATH"
 
 	if command -v dnf >/dev/null 2>&1; then
 		run_as_root dnf install -y "$RPM_PATH"
@@ -398,7 +400,7 @@ install_cap_desktop() {
 			install_cap_desktop_linux
 			;;
 		*)
-			echo "Cap Desktop auto-install is only supported on macOS and Linux. Install Cap from https://cap.so/download, then run this script again." >&2
+			echo "Cap Desktop auto-install is only supported on macOS and Linux. Install Cap from ${baseUrl}/download, then run this script again." >&2
 			exit 1
 			;;
 	esac
@@ -520,8 +522,8 @@ case ":$PATH:" in
 esac
 `;
 
-export async function GET() {
-	return new Response(script, {
+export async function GET(request: Request) {
+	return new Response(script(getCliInstallerBaseUrl(request)), {
 		headers: {
 			"Content-Type": "text/x-shellscript; charset=utf-8",
 			"Cache-Control": "public, max-age=3600",

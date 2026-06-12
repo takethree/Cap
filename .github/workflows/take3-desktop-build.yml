@@ -1,0 +1,242 @@
+name: "Build Take-3 Desktop"
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - take-three
+
+concurrency:
+  group: take3-desktop-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TARGET: x86_64-pc-windows-msvc
+  TAKE3_WEB_URL: https://cap.take3tech.dev
+  TAKE3_DESKTOP_BUNDLE_IDS: dev.take3tech.cap.desktop,so.cap.desktop.take3
+  TAKE3_RELEASE_TAG_PREFIX: take3-desktop-
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    permissions:
+      contents: write
+      actions: read
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify required secrets
+        shell: pwsh
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SIGNPATH_ORGANIZATION_ID: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          SIGNPATH_PROJECT_SLUG: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          SIGNPATH_SIGNING_POLICY_SLUG: ${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}
+          SIGNPATH_ARTIFACT_CONFIGURATION_SLUG: ${{ secrets.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          $required = @(
+            "SIGNPATH_API_TOKEN",
+            "SIGNPATH_ORGANIZATION_ID",
+            "SIGNPATH_PROJECT_SLUG",
+            "SIGNPATH_SIGNING_POLICY_SLUG",
+            "SIGNPATH_ARTIFACT_CONFIGURATION_SLUG",
+            "TAURI_SIGNING_PRIVATE_KEY",
+            "TAURI_SIGNING_PRIVATE_KEY_PASSWORD"
+          )
+
+          $missing = $required | Where-Object { -not [Environment]::GetEnvironmentVariable($_) }
+          if ($missing.Count -gt 0) {
+            throw "Missing required Take-3 desktop build secrets: $($missing -join ', ')"
+          }
+
+      - name: Rust setup
+        uses: dtolnay/rust-toolchain@1.88.0
+        with:
+          targets: ${{ env.TARGET }}
+
+      - name: Verify Rust toolchain
+        shell: bash
+        run: |
+          rustc -Vv
+          cargo -V
+          rustup show active-toolchain
+
+      - uses: ./.github/actions/setup-rust-cache
+        with:
+          target: ${{ env.TARGET }}
+
+      - uses: ./.github/actions/setup-js
+
+      - name: Set Take-3 desktop version
+        id: version
+        shell: pwsh
+        run: |
+          $cargoToml = "apps/desktop/src-tauri/Cargo.toml"
+          $content = Get-Content $cargoToml -Raw
+          $match = [regex]::Match($content, 'version\s*=\s*"(?<version>[^"]+)"')
+          if (-not $match.Success) {
+            throw "Could not read desktop package version from $cargoToml"
+          }
+
+          $base = [version]$match.Groups["version"].Value
+          $version = "$($base.Major).$($base.Minor).${{ github.run_number }}"
+          $content = [regex]::Replace($content, 'version\s*=\s*"[^"]+"', "version = `"$version`"", 1)
+          Set-Content -Path $cargoToml -Value $content -NoNewline
+          "value=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Create .env file in root
+        shell: bash
+        run: |
+          {
+            echo "appVersion=${{ steps.version.outputs.value }}"
+            echo "VITE_ENVIRONMENT=production"
+            echo "NEXT_PUBLIC_WEB_URL=${{ env.TAKE3_WEB_URL }}"
+            echo "NEXTAUTH_URL=${{ env.TAKE3_WEB_URL }}"
+            echo "VITE_SERVER_URL=${{ env.TAKE3_WEB_URL }}"
+            echo "CAP_DEFAULT_SERVER_URL=${{ env.TAKE3_WEB_URL }}"
+            echo "CAP_INSTALLER_BASE_URL=${{ env.TAKE3_WEB_URL }}"
+            echo "CAP_DESKTOP_BUNDLE_IDS=${{ env.TAKE3_DESKTOP_BUNDLE_IDS }}"
+            echo "RUST_TARGET_TRIPLE=${{ env.TARGET }}"
+          } >> .env
+
+      - name: Run cap-setup
+        shell: bash
+        run: pnpm -w cap-setup
+        env:
+          RUST_TARGET_TRIPLE: ${{ env.TARGET }}
+
+      - name: Build desktop binaries
+        shell: bash
+        run: ./scripts/build-desktop-binaries.sh ${{ env.TARGET }}
+        env:
+          CAP_DEFAULT_SERVER_URL: ${{ env.TAKE3_WEB_URL }}
+          CAP_INSTALLER_BASE_URL: ${{ env.TAKE3_WEB_URL }}
+          CAP_DESKTOP_BUNDLE_IDS: ${{ env.TAKE3_DESKTOP_BUNDLE_IDS }}
+
+      - name: Build app
+        working-directory: apps/desktop
+        run: pnpm build:tauri --target ${{ env.TARGET }} --config src-tauri/tauri.take3.conf.json
+        env:
+          CI: false
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          RUST_TARGET_TRIPLE: ${{ env.TARGET }}
+          CAP_DEFAULT_SERVER_URL: ${{ env.TAKE3_WEB_URL }}
+          CAP_INSTALLER_BASE_URL: ${{ env.TAKE3_WEB_URL }}
+          CAP_DESKTOP_BUNDLE_IDS: ${{ env.TAKE3_DESKTOP_BUNDLE_IDS }}
+
+      - name: Upload unsigned Windows installer
+        id: upload_unsigned_windows_installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: take3-unsigned-windows-installer
+          path: target/${{ env.TARGET }}/release/bundle/nsis/*.exe
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Submit SignPath signing request
+        id: submit_signpath_signing_request
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ secrets.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG }}
+          github-artifact-id: ${{ steps.upload_unsigned_windows_installer.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed-windows-installer
+
+      - name: Restore signed Windows installer
+        shell: pwsh
+        run: |
+          $signedDir = "signed-windows-installer"
+          $bundleDir = "target/${{ env.TARGET }}/release/bundle/nsis"
+
+          if (-not (Test-Path $signedDir)) {
+            throw "Signed artifact directory '$signedDir' not found."
+          }
+
+          $executables = Get-ChildItem -Path $signedDir -Filter *.exe -Recurse
+          if (-not $executables) {
+            throw "No signed executables found in '$signedDir'."
+          }
+
+          Copy-Item -Path (Join-Path $signedDir '*.exe') -Destination $bundleDir -Force
+
+      - name: Re-sign Windows installer for Tauri updater
+        shell: bash
+        working-directory: apps/desktop
+        run: |
+          BUNDLE_DIR="../../target/${{ env.TARGET }}/release/bundle/nsis"
+          for exe in "$BUNDLE_DIR"/*.exe; do
+            rm -f "${exe}.sig"
+            pnpm tauri signer sign -k "$TAURI_SIGNING_PRIVATE_KEY" -p "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD" "$exe"
+          done
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      - name: Generate Take-3 release manifest
+        id: manifest
+        shell: pwsh
+        run: |
+          $bundleDir = "target/${{ env.TARGET }}/release/bundle/nsis"
+          $manifestPath = "$bundleDir/take3-desktop-manifest.json"
+          $installer = Get-ChildItem -Path $bundleDir -Filter *.exe | Select-Object -First 1
+          if (-not $installer) {
+            throw "No Windows installer found in $bundleDir."
+          }
+
+          $updater = Get-ChildItem -Path $bundleDir -Filter *.nsis.zip | Select-Object -First 1
+          if (-not $updater) {
+            $updater = $installer
+          }
+
+          $signaturePath = "$($updater.FullName).sig"
+          if (-not (Test-Path $signaturePath)) {
+            throw "No Tauri updater signature found at $signaturePath."
+          }
+
+          $tag = "${{ env.TAKE3_RELEASE_TAG_PREFIX }}${{ steps.version.outputs.value }}"
+          $releaseBase = "https://github.com/${{ github.repository }}/releases/download/$tag"
+          $manifest = [ordered]@{
+            version = "${{ steps.version.outputs.value }}"
+            commitSha = "${{ github.sha }}"
+            publishedAt = (Get-Date).ToUniversalTime().ToString("o")
+            windows = [ordered]@{
+              installerUrl = "$releaseBase/$($installer.Name)"
+              updaterUrl = "$releaseBase/$($updater.Name)"
+              signature = (Get-Content $signaturePath -Raw).Trim()
+            }
+          }
+
+          $manifest | ConvertTo-Json -Depth 5 | Set-Content -Path $manifestPath -Encoding utf8
+          "path=$manifestPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "tag=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Upload Take-3 build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: take3-windows-desktop-${{ steps.version.outputs.value }}
+          path: |
+            target/${{ env.TARGET }}/release/bundle/nsis/*
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish Take-3 release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.manifest.outputs.tag }}
+          name: Take-3 Desktop ${{ steps.version.outputs.value }}
+          draft: false
+          prerelease: true
+          files: |
+            target/${{ env.TARGET }}/release/bundle/nsis/*

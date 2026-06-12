@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::{OutputFormat, doctor::SCHEMA_VERSION, write_json};
+use crate::{OutputFormat, distribution, doctor::SCHEMA_VERSION, write_json};
 
 /// Machine-readable capability + schema manifest. `cap guide --json` is the single document an agent
 /// can fetch to learn the output convention, env vars, exit codes, and the per-command output shape
@@ -116,7 +116,7 @@ fn build() -> Guide {
                 name: "CAP_SERVER_URL",
                 required: false,
                 used_by: "upload",
-                description: "Cap server base URL. Defaults to https://cap.so.",
+                description: distribution::default_server_url(),
             },
             EnvVar {
                 name: "CAP_NO_MODIFY_PATH",

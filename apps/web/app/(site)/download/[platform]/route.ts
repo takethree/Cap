@@ -1,5 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getGitHubReleases, type ReleaseDownloadKey } from "@/utils/releases";
+import {
+	getLatestTake3DesktopManifest,
+	shouldUseTake3DesktopChannel,
+} from "@/utils/take3-desktop-release";
 
 export const runtime = "edge";
 
@@ -132,6 +136,14 @@ export async function GET(
 	// If the platform is not supported, redirect to the main download page
 	if (!download) {
 		return NextResponse.redirect(new URL("/download", request.url));
+	}
+
+	if (platform === "windows" && shouldUseTake3DesktopChannel(request)) {
+		const manifest = await getLatestTake3DesktopManifest().catch(() => null);
+		if (manifest?.windows.installerUrl) {
+			return NextResponse.redirect(manifest.windows.installerUrl);
+		}
+		return NextResponse.redirect(new URL("/download/versions", request.url));
 	}
 
 	const primary = await checkCrabNebulaDownload(download.url);

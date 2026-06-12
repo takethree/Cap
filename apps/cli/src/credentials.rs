@@ -8,11 +8,7 @@
 use serde::Serialize;
 use serde_json::Value;
 
-use crate::{OutputFormat, write_json};
-
-const DEFAULT_SERVER: &str = "https://cap.so";
-// Prod first, then the dev bundle, so a released install wins on a machine that has both.
-const DESKTOP_BUNDLE_IDS: [&str; 2] = ["so.cap.desktop", "so.cap.desktop.dev"];
+use crate::{distribution, OutputFormat, write_json};
 
 #[derive(Serialize, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -34,7 +30,7 @@ pub struct Credentials {
 
 fn load_desktop_store() -> Option<Value> {
     let data_dir = dirs::data_dir()?;
-    DESKTOP_BUNDLE_IDS.into_iter().find_map(|id| {
+    distribution::desktop_bundle_ids().into_iter().find_map(|id| {
         let bytes = std::fs::read(data_dir.join(id).join("store")).ok()?;
         let store: Value = serde_json::from_slice(&bytes).ok()?;
         // Only accept a store that actually carries an auth secret.
@@ -73,14 +69,26 @@ fn env_var(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|v| !v.is_empty())
 }
 
+fn resolve_server_url(
+    env_server: Option<String>,
+    store_server: Option<String>,
+    default_server: &str,
+) -> String {
+    normalize_server(
+        env_server
+            .or(store_server)
+            .unwrap_or_else(|| default_server.to_string()),
+    )
+}
+
 /// Resolve the upload credential and target server. Returns a clear, actionable error when neither an
 /// env var nor a desktop login is available.
 pub fn resolve() -> Result<Credentials, String> {
     let store = load_desktop_store();
-    let server = normalize_server(
-        env_var("CAP_SERVER_URL")
-            .or_else(|| store.as_ref().and_then(store_server))
-            .unwrap_or_else(|| DEFAULT_SERVER.to_string()),
+    let server = resolve_server_url(
+        env_var("CAP_SERVER_URL"),
+        store.as_ref().and_then(store_server),
+        distribution::default_server_url(),
     );
 
     if let Some(api_key) = env_var("CAP_API_KEY") {
@@ -139,10 +147,10 @@ pub fn status(format: OutputFormat) -> Result<(), String> {
             hint: None,
         },
         Err(hint) => {
-            let server = normalize_server(
-                env_var("CAP_SERVER_URL")
-                    .or_else(|| load_desktop_store().as_ref().and_then(store_server))
-                    .unwrap_or_else(|| DEFAULT_SERVER.to_string()),
+            let server = resolve_server_url(
+                env_var("CAP_SERVER_URL"),
+                load_desktop_store().as_ref().and_then(store_server),
+                distribution::default_server_url(),
             );
             AuthStatus {
                 authenticated: false,
@@ -174,5 +182,48 @@ pub fn status(format: OutputFormat) -> Result<(), String> {
             }
             Ok(())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn server_resolution_prefers_env_then_desktop_then_packaged_default() {
+        assert_eq!(
+            resolve_server_url(
+                Some("https://env.example/".to_string()),
+                Some("https://desktop.example".to_string()),
+                "https://cap.take3tech.dev",
+            ),
+            "https://env.example"
+        );
+        assert_eq!(
+            resolve_server_url(
+                None,
+                Some("https://desktop.example/".to_string()),
+                "https://cap.take3tech.dev",
+            ),
+            "https://desktop.example"
+        );
+        assert_eq!(
+            resolve_server_url(None, None, "https://cap.take3tech.dev"),
+            "https://cap.take3tech.dev"
+        );
+    }
+
+    #[test]
+    fn store_server_reads_desktop_general_settings() {
+        let store = serde_json::json!({
+            "general_settings": {
+                "serverUrl": "https://cap.take3tech.dev"
+            }
+        });
+
+        assert_eq!(
+            store_server(&store).as_deref(),
+            Some("https://cap.take3tech.dev")
+        );
     }
 }

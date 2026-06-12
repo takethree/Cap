@@ -1,6 +1,6 @@
 const programFilesX86 = "$" + "{env:ProgramFiles(x86)}";
 
-const script = String.raw`$ErrorActionPreference = "Stop"
+const script = (baseUrl: string) => String.raw`$ErrorActionPreference = "Stop"
 
 function Find-CapAppPath {
 	$candidates = @(
@@ -20,7 +20,7 @@ function Find-CapAppPath {
 }
 
 function Install-CapDesktop {
-	$downloadUrl = "https://cap.so/download/windows"
+	$downloadUrl = "${baseUrl}/download/windows"
 	$installerPath = Join-Path ([System.IO.Path]::GetTempPath()) ("Cap-" + [System.Guid]::NewGuid().ToString("N") + ".exe")
 
 	try {
@@ -161,8 +161,10 @@ if ($sessionEntries -contains $installDir) {
 }
 `;
 
-export async function GET() {
-	return new Response(script, {
+import { getCliInstallerBaseUrl } from "@/utils/take3-desktop-release";
+
+export async function GET(request: Request) {
+	return new Response(script(getCliInstallerBaseUrl(request)), {
 		headers: {
 			"Content-Type": "text/plain; charset=utf-8",
 			"Cache-Control": "public, max-age=3600",

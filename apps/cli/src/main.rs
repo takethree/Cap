@@ -1,4 +1,5 @@
 mod credentials;
+mod distribution;
 mod doctor;
 mod export;
 mod guide;
@@ -42,7 +43,7 @@ AUTH
 ENVIRONMENT
   CAP_API_KEY         Overrides auth for `cap upload` (Cap auth key from Settings); optional when
                       signed into Cap Desktop.
-  CAP_SERVER_URL      Cap server base URL; defaults to Cap Desktop's server, else https://cap.so.
+  CAP_SERVER_URL      Cap server base URL; defaults to Cap Desktop's server, else the packaged default.
   CAP_NO_MODIFY_PATH  Set to skip editing shell profiles during `cap desktop install-cli`.
   CAP_DESKTOP_FORCE_INSTALL
                       Force the web installer scripts to replace Cap Desktop before linking the CLI.
