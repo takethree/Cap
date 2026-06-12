@@ -2,14 +2,18 @@
 
 import type { videos as videosSchema } from "@cap/database/schema";
 import type { VideoMetadata } from "@cap/database/types";
-import { buildEnv, NODE_ENV } from "@cap/env";
+import { NODE_ENV } from "@cap/env";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@cap/ui";
-import { calculateStrokeDashoffset, getProgressCircleConfig } from "@cap/utils";
+import {
+	calculateStrokeDashoffset,
+	getProgressCircleConfig,
+	isCapCloud,
+} from "@cap/utils";
 import type { SpaceRuleSource, ViewerSettingKey } from "@cap/web-backend";
 import type { ImageUpload, Video } from "@cap/web-domain";
 import { HttpClient } from "@effect/platform";
@@ -347,9 +351,9 @@ export const CapCard = ({
 		handleCopy(
 			NODE_ENV === "development"
 				? `${webUrl}/s/${cap.id}`
-				: buildEnv.NEXT_PUBLIC_IS_CAP && customDomain && domainVerified
+				: isCapCloud && customDomain && domainVerified
 					? `https://${customDomain}/s/${cap.id}`
-					: buildEnv.NEXT_PUBLIC_IS_CAP && !customDomain && !domainVerified
+					: isCapCloud && !customDomain && !domainVerified
 						? `https://cap.link/${cap.id}`
 						: `${webUrl}/s/${cap.id}`,
 		);
@@ -363,7 +367,7 @@ export const CapCard = ({
 		Boolean(cap.duration && cap.duration > 0);
 	const handleEditVideo = () => {
 		if (!canEditVideo) return;
-		if (!user.isPro) {
+		if (isCapCloud && !user.isPro) {
 			setEditUpgradeModalOpen(true);
 			return;
 		}
@@ -575,8 +579,11 @@ export const CapCard = ({
 									)}
 									<DropdownMenuItem
 										onClick={() => {
-											if (!user.isPro) setUpgradeModalOpen(true);
-											else setIsPasswordDialogOpen(true);
+											if (isCapCloud && !user.isPro) {
+												setUpgradeModalOpen(true);
+											} else {
+												setIsPasswordDialogOpen(true);
+											}
 										}}
 										className="flex gap-2 items-center rounded-lg"
 									>

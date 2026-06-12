@@ -9,6 +9,7 @@ import {
 	DialogContent,
 	DialogTitle,
 } from "@cap/ui";
+import { isCapCloud } from "@cap/utils";
 import { useDetectPlatform } from "hooks/useDetectPlatform";
 import {
 	BarChart3,
@@ -224,18 +225,22 @@ export function DashboardSearch({
 							id: "organization-members",
 							title: "Organization Members",
 							subtitle: "Invite and manage teammates",
-							href: "/dashboard/settings/organization/members",
+							href: "/dashboard/settings/organization/billing",
 							value: "organization members invites teammates seats",
 							icon: UsersRound,
 						},
-						{
-							id: "organization-billing",
-							title: "Billing",
-							subtitle: "Subscription, seats, and invoices",
-							href: "/dashboard/settings/organization/billing",
-							value: "billing subscription seats invoices organization",
-							icon: CreditCard,
-						},
+						...(isCapCloud
+							? [
+									{
+										id: "organization-billing",
+										title: "Billing",
+										subtitle: "Subscription, seats, and invoices",
+										href: "/dashboard/settings/organization/billing",
+										value: "billing subscription seats invoices organization",
+										icon: CreditCard,
+									},
+								]
+							: []),
 						{
 							id: "organization-preferences",
 							title: "Cap Settings",

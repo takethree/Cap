@@ -7,6 +7,7 @@ import {
 	DialogTitle,
 	Switch,
 } from "@cap/ui";
+import { isCapCloud } from "@cap/utils";
 import type { SpaceRuleSource, ViewerSettingKey } from "@cap/web-backend";
 import type { Video } from "@cap/web-domain";
 import { faGear } from "@fortawesome/free-solid-svg-icons";
@@ -77,6 +78,7 @@ export const SettingsDialog = ({
 }: SettingsDialogProps) => {
 	const { user, organizationSettings } = useDashboardContext();
 	const [saveLoading, setSaveLoading] = useState(false);
+	const requiresPro = isCapCloud && !user.isPro;
 	const buildSettings = useCallback(
 		(data?: OrganizationSettings): OrganizationSettings => ({
 			disableComments: data?.disableComments,
@@ -193,12 +195,12 @@ export const SettingsDialog = ({
 								<div
 									className={clsx(
 										"flex flex-col flex-1",
-										option.pro && "gap-1",
+										option.pro && isCapCloud && "gap-1",
 									)}
 								>
 									<div className="flex gap-1.5 items-center flex-wrap">
 										<p className="text-sm text-gray-12">{option.label}</p>
-										{option.pro && (
+										{option.pro && isCapCloud && (
 											<p className="py-1 px-1.5 text-[10px] leading-none font-medium rounded-full text-white bg-blue-11">
 												Pro
 											</p>
@@ -215,7 +217,7 @@ export const SettingsDialog = ({
 								<Switch
 									disabled={
 										Boolean(inheritedLabel) ||
-										(option.pro && !user.isPro) ||
+										(option.pro && requiresPro) ||
 										((key === "disableSummary" || key === "disableChapters") &&
 											getEffectiveValue("disableTranscript"))
 									}

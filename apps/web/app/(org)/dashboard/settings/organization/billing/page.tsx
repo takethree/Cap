@@ -1,7 +1,7 @@
 "use client";
 
-import { buildEnv } from "@cap/env";
 import { Card, CardDescription, CardHeader, CardTitle } from "@cap/ui";
+import { isCapCloud } from "@cap/utils";
 import { useDashboardContext } from "@/app/(org)/dashboard/Contexts";
 import {
 	canManageOrganizationBilling,
@@ -26,7 +26,7 @@ export default function BillingAndMembersPage() {
 
 	return (
 		<div className="flex flex-col gap-6">
-			{buildEnv.NEXT_PUBLIC_IS_CAP &&
+			{isCapCloud &&
 				(canManageBilling ? (
 					<>
 						<BillingSummaryCard />

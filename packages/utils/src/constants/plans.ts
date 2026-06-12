@@ -1,5 +1,7 @@
 import { buildEnv } from "@cap/env";
 
+export const isCapCloud = buildEnv.NEXT_PUBLIC_IS_CAP === "true";
+
 export const STRIPE_DEVELOPER_CREDITS_PRODUCT_ID: Record<string, string> = {
 	development: "prod_U4mswfBp0bFc39",
 	production: "prod_REPLACE_BEFORE_PRODUCTION",
@@ -22,7 +24,7 @@ export const userIsPro = (
 		thirdPartyStripeSubscriptionId?: string | null;
 	} | null,
 ) => {
-	if (!buildEnv.NEXT_PUBLIC_IS_CAP) return true;
+	if (!isCapCloud) return true;
 
 	if (!user) return false;
 

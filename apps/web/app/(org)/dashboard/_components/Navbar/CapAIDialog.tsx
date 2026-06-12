@@ -5,6 +5,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@cap/ui";
+import { isCapCloud } from "@cap/utils";
 import {
 	faInfoCircle,
 	faWandMagicSparkles,
@@ -16,6 +17,7 @@ import { useDashboardContext, useTheme } from "../../Contexts";
 const CapAIDialog = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
 	const { theme } = useTheme();
 	const { user, setUpgradeModalOpen } = useDashboardContext();
+	const requiresPro = isCapCloud && !user.isPro;
 
 	const { RiveComponent: CapAIArt } = useRive({
 		src: "/rive/bento.riv",
@@ -35,9 +37,11 @@ const CapAIDialog = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
 			<DialogHeader icon={<FontAwesomeIcon icon={faInfoCircle} />}>
 				<DialogTitle className="flex gap-2 items-center text-lg font-medium text-gray-12">
 					Cap AI
-					<span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white">
-						Pro
-					</span>
+					{isCapCloud && (
+						<span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white">
+							Pro
+						</span>
+					)}
 				</DialogTitle>
 			</DialogHeader>
 			<div className="p-8">
@@ -72,7 +76,7 @@ const CapAIDialog = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
 				</div>
 			</div>
 			<DialogFooter>
-				{!user.isPro ? (
+				{requiresPro ? (
 					<div className="flex gap-2 ml-auto">
 						<Button
 							autoFocus={false}

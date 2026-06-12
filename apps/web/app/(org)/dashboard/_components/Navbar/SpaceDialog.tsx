@@ -15,6 +15,7 @@ import {
 	Label,
 	Switch,
 } from "@cap/ui";
+import { isCapCloud } from "@cap/utils";
 import type { ImageUpload } from "@cap/web-domain";
 import { faLayerGroup, faLock } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -217,6 +218,7 @@ export const NewSpaceForm: React.FC<NewSpaceFormProps> = (props) => {
 	const [isUploading, setIsUploading] = useState(false);
 	const { activeOrganization, user, setUpgradeModalOpen } =
 		useDashboardContext();
+	const requiresPro = isCapCloud && !user.isPro;
 	const [settings, setSettings] = useState<OrganizationSettings>({
 		...defaultSettings,
 		...space?.settings,
@@ -253,7 +255,7 @@ export const NewSpaceForm: React.FC<NewSpaceFormProps> = (props) => {
 	};
 
 	const handlePasswordToggle = (checked: boolean) => {
-		if (checked && user && !user.isPro) {
+		if (checked && requiresPro) {
 			setUpgradeModalOpen(true);
 			return;
 		}
@@ -532,7 +534,7 @@ export const NewSpaceForm: React.FC<NewSpaceFormProps> = (props) => {
 						<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
 							{settingOptions.map((option) => {
 								const disabled =
-									(option.pro && !user?.isPro) ||
+									(option.pro && requiresPro) ||
 									((option.value === "disableSummary" ||
 										option.value === "disableChapters") &&
 										settings.disableTranscript);
@@ -545,7 +547,7 @@ export const NewSpaceForm: React.FC<NewSpaceFormProps> = (props) => {
 										<div>
 											<div className="flex gap-1.5 items-center">
 												<p className="text-sm text-gray-12">{option.label}</p>
-												{option.pro && (
+												{option.pro && isCapCloud && (
 													<span className="rounded-full bg-blue-11 px-1.5 py-0.5 text-[10px] font-medium leading-none text-white">
 														Pro
 													</span>

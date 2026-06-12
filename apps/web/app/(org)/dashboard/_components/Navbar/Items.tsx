@@ -1,5 +1,4 @@
 "use client";
-import { buildEnv } from "@cap/env";
 import {
 	Button,
 	Command,
@@ -17,7 +16,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@cap/ui";
-import { classNames } from "@cap/utils";
+import { classNames, isCapCloud } from "@cap/utils";
 import {
 	faBuilding,
 	faCircleInfo,
@@ -64,8 +63,7 @@ const AdminNavItems = ({ toggleMobileNav }: Props) => {
 	const DEVELOPER_DASHBOARD_ALLOWED_EMAILS = ["richie@cap.so"];
 
 	const showDeveloperDashboard =
-		buildEnv.NEXT_PUBLIC_IS_CAP &&
-		DEVELOPER_DASHBOARD_ALLOWED_EMAILS.includes(user.email);
+		isCapCloud && DEVELOPER_DASHBOARD_ALLOWED_EMAILS.includes(user.email);
 
 	const manageNavigation = [
 		{
@@ -214,7 +212,7 @@ const AdminNavItems = ({ toggleMobileNav }: Props) => {
 												/>
 											)}
 										</div>
-										{!sidebarCollapsed && (
+										{isCapCloud && !sidebarCollapsed && (
 											<Link
 												href={
 													isDomainSetupVerified
@@ -371,11 +369,13 @@ const AdminNavItems = ({ toggleMobileNav }: Props) => {
 					<SpacesList toggleMobileNav={() => toggleMobileNav?.()} />
 				</div>
 				<div className="pb-4 mt-auto w-full">
-					<UsageButton
-						toggleMobileNav={() => toggleMobileNav?.()}
-						subscribed={user.isPro}
-					/>
-					{buildEnv.NEXT_PUBLIC_IS_CAP && (
+					{isCapCloud && (
+						<UsageButton
+							toggleMobileNav={() => toggleMobileNav?.()}
+							subscribed={user.isPro}
+						/>
+					)}
+					{isCapCloud && (
 						<div className="flex justify-center items-center mt-2">
 							<Link
 								href="/dashboard/refer"

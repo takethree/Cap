@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardDescription, CardHeader, CardTitle, Switch } from "@cap/ui";
+import { isCapCloud } from "@cap/utils";
 import {
 	AI_GENERATION_LANGUAGE_AUTO,
 	AI_GENERATION_LANGUAGES,
@@ -111,6 +112,7 @@ const CapSettingsCard = () => {
 	const debouncedUpdateSettings = useDebounce(settings, 1000);
 	const selectedLanguage =
 		settings.aiGenerationLanguage ?? AI_GENERATION_LANGUAGE_AUTO;
+	const requiresPro = isCapCloud && !user.isPro;
 
 	useEffect(() => {
 		const next = mergeSettings(organizationSettings);
@@ -264,11 +266,14 @@ const CapSettingsCard = () => {
 						className="flex gap-10 justify-between items-center p-4 text-left rounded-xl border transition-colors bg-gray-2 min-w-fit border-gray-3"
 					>
 						<div
-							className={clsx("flex flex-col flex-1", option.pro && "gap-1")}
+							className={clsx(
+								"flex flex-col flex-1",
+								option.pro && isCapCloud && "gap-1",
+							)}
 						>
 							<div className="flex gap-1.5 items-center">
 								<p className="text-sm text-gray-12">{option.label}</p>
-								{option.pro && (
+								{option.pro && isCapCloud && (
 									<p className="py-1 px-1.5 text-[10px] leading-none font-medium rounded-full text-white bg-blue-11">
 										Pro
 									</p>
@@ -278,7 +283,7 @@ const CapSettingsCard = () => {
 						</div>
 						<Switch
 							disabled={
-								(option.pro && !user.isPro) ||
+								(option.pro && requiresPro) ||
 								((option.value === "disableSummary" ||
 									option.value === "disableChapters") &&
 									settings?.disableTranscript)
@@ -327,9 +332,11 @@ const CapSettingsCard = () => {
 				<div className="flex flex-col flex-1 gap-1">
 					<div className="flex gap-1.5 items-center">
 						<p className="text-sm text-gray-12">AI generation language</p>
-						<p className="py-1 px-1.5 text-[10px] leading-none font-medium rounded-full text-white bg-blue-11">
-							Pro
-						</p>
+						{isCapCloud && (
+							<p className="py-1 px-1.5 text-[10px] leading-none font-medium rounded-full text-white bg-blue-11">
+								Pro
+							</p>
+						)}
 					</div>
 					<p className="text-xs text-gray-10">
 						Set the language used for transcripts, titles, summaries, and
@@ -339,7 +346,7 @@ const CapSettingsCard = () => {
 				<div className="relative w-full sm:w-auto" ref={languageMenuRef}>
 					<button
 						onClick={() => setShowLanguageMenu((value) => !value)}
-						disabled={!user.isPro}
+						disabled={requiresPro}
 						className="flex items-center gap-1.5 px-2.5 py-1.5 w-full justify-between text-xs font-medium rounded-lg border border-gray-3 bg-gray-1 hover:bg-gray-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors sm:min-w-40"
 						type="button"
 					>

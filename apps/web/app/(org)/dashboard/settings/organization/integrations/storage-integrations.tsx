@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Input, Label, Select } from "@cap/ui";
+import { isCapCloud } from "@cap/utils";
 import type { Organisation } from "@cap/web-domain";
 import {
 	ChevronRightIcon,
@@ -122,7 +123,7 @@ export function OrganizationStorageIntegrations({
 	}, [initialSettings]);
 
 	const requirePro = () => {
-		if (user.isPro) return true;
+		if (!isCapCloud || user.isPro) return true;
 		setUpgradeModalOpen(true);
 		return false;
 	};
@@ -139,7 +140,11 @@ export function OrganizationStorageIntegrations({
 				toast.success(successMessage);
 				router.refresh();
 			} catch (error) {
-				if (error instanceof Error && error.message === proRequiredMessage) {
+				if (
+					isCapCloud &&
+					error instanceof Error &&
+					error.message === proRequiredMessage
+				) {
 					setUpgradeModalOpen(true);
 					return;
 				}
@@ -214,7 +219,11 @@ export function OrganizationStorageIntegrations({
 			setFolderBrowserFolders(folders);
 			setFolderBrowserOpen(true);
 		} catch (error) {
-			if (error instanceof Error && error.message === proRequiredMessage) {
+			if (
+				isCapCloud &&
+				error instanceof Error &&
+				error.message === proRequiredMessage
+			) {
 				setUpgradeModalOpen(true);
 				return;
 			}

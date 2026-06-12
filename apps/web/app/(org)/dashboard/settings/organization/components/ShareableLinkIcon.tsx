@@ -1,6 +1,7 @@
 "use client";
 
 import { CardDescription, Label, Switch } from "@cap/ui";
+import { isCapCloud } from "@cap/utils";
 import type { Organisation } from "@cap/web-domain";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -109,6 +110,7 @@ export const ShareableLinkIcon = () => {
 		removeIcon.isPending ||
 		updateIconPreference.isPending;
 	const useOrganizationIconChecked = useOrganizationIcon && hasOrganizationIcon;
+	const requiresPro = isCapCloud && !user.isPro;
 
 	return (
 		<>
@@ -116,9 +118,11 @@ export const ShareableLinkIcon = () => {
 				<div className="space-y-1">
 					<div className="flex gap-1.5 items-center">
 						<Label htmlFor={iconInputId}>Shareable link icon</Label>
-						<p className="py-1 px-1.5 text-[10px] leading-none font-medium rounded-full text-white bg-blue-11">
-							Pro
-						</p>
+						{isCapCloud && (
+							<p className="py-1 px-1.5 text-[10px] leading-none font-medium rounded-full text-white bg-blue-11">
+								Pro
+							</p>
+						)}
 					</div>
 					<CardDescription className="w-full">
 						Use a custom logo or icon on your shareable link pages.
@@ -132,11 +136,11 @@ export const ShareableLinkIcon = () => {
 						</p>
 					</div>
 					<Switch
-						disabled={!user.isPro || !hasOrganizationIcon || isMutating}
+						disabled={requiresPro || !hasOrganizationIcon || isMutating}
 						checked={useOrganizationIconChecked}
 						onCheckedChange={(checked) => {
 							if (!organizationId) return;
-							if (!user.isPro) {
+							if (requiresPro) {
 								setShowUpgradeModal(true);
 								return;
 							}
@@ -156,13 +160,13 @@ export const ShareableLinkIcon = () => {
 					name="shareable-link-icon"
 					onChange={(file) => {
 						if (!file || !organizationId) return;
-						if (!user.isPro) {
+						if (requiresPro) {
 							setShowUpgradeModal(true);
 							return;
 						}
 						uploadIcon.mutate({ organizationId, file });
 					}}
-					disabled={!user.isPro || useOrganizationIconChecked || isMutating}
+					disabled={requiresPro || useOrganizationIconChecked || isMutating}
 					isLoading={uploadIcon.isPending}
 					initialPreviewUrl={
 						useOrganizationIconChecked
@@ -171,7 +175,7 @@ export const ShareableLinkIcon = () => {
 					}
 					onRemove={() => {
 						if (!organizationId) return;
-						if (!user.isPro) {
+						if (requiresPro) {
 							setShowUpgradeModal(true);
 							return;
 						}
