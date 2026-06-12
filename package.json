@@ -15,6 +15,7 @@
 		"db:generate": "dotenv -e .env -- pnpm --filter @cap/database db:generate",
 		"db:push": "dotenv -e .env -- pnpm --filter @cap/database db:push",
 		"db:studio": "dotenv -e .env -- pnpm --filter @cap/database db:studio",
+		"domain-auto-join:backfill": "dotenv -e .env -- node scripts/domain-auto-join-backfill.js",
 		"dev": "pnpm run docker:up && trap 'pnpm run docker:stop' EXIT && dotenv -e .env -- turbo run dev --env-mode=loose --ui tui",
 		"dev:desktop": "pnpm run --filter=@cap/desktop dev",
 		"dev:manual": "pnpm run docker:up && trap 'pnpm run docker:stop' EXIT && dotenv -e .env -- turbo run dev --filter=!@cap/storybook --no-cache --concurrency 1",

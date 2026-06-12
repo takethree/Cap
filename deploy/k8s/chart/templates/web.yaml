@@ -285,6 +285,18 @@ spec:
                   name: {{ include "cap.configName" . }}
                   key: CAP_ALLOWED_SIGNUP_DOMAINS
             {{- end }}
+            {{- if .Values.web.autoJoinOrganizationRules }}
+            - name: CAP_AUTO_JOIN_ORGANIZATION_RULES
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: CAP_AUTO_JOIN_ORGANIZATION_RULES
+            {{- end }}
+            - name: CAP_AUTO_SHARE_NEW_VIDEOS_TO_ORG_ROOT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: CAP_AUTO_SHARE_NEW_VIDEOS_TO_ORG_ROOT
             {{- with .Values.web.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

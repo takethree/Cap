@@ -1,4 +1,8 @@
 import { db } from "@cap/database";
+import {
+	shouldAutoShareVideoToOrganization,
+	shouldCreateOrganizationRootShare,
+} from "@cap/database/auth/domain-utils";
 import { sendEmail, supportsScheduledEmail } from "@cap/database/emails/config";
 import { FirstShareableLink } from "@cap/database/emails/first-shareable-link";
 import { nanoId } from "@cap/database/helpers";
@@ -6,6 +10,7 @@ import {
 	importedVideos,
 	organizationMembers,
 	organizations,
+	sharedVideos,
 	users,
 	videos,
 	videoUploads,
@@ -250,6 +255,41 @@ app.get(
 					fps,
 					...(metadata ? { metadata } : {}),
 				});
+
+			if (
+				shouldAutoShareVideoToOrganization({
+					organizationId: videoOrgId,
+					rulesConfig: serverEnv().CAP_AUTO_JOIN_ORGANIZATION_RULES,
+					autoShareEnabled: serverEnv().CAP_AUTO_SHARE_NEW_VIDEOS_TO_ORG_ROOT,
+				})
+			) {
+				const [existingShare] = await db()
+					.select({ id: sharedVideos.id })
+					.from(sharedVideos)
+					.where(
+						and(
+							eq(sharedVideos.videoId, idToUse),
+							eq(sharedVideos.organizationId, videoOrgId),
+						),
+					)
+					.limit(1);
+
+				if (
+					shouldCreateOrganizationRootShare({
+						organizationId: videoOrgId,
+						rulesConfig: serverEnv().CAP_AUTO_JOIN_ORGANIZATION_RULES,
+						autoShareEnabled: serverEnv().CAP_AUTO_SHARE_NEW_VIDEOS_TO_ORG_ROOT,
+						hasExistingShare: Boolean(existingShare),
+					})
+				) {
+					await db().insert(sharedVideos).values({
+						id: nanoId(),
+						videoId: idToUse,
+						organizationId: videoOrgId,
+						sharedByUserId: user.id,
+					});
+				}
+			}
 
 			const clientSupportsUploadProgress = isFromDesktopSemver(
 				c.req,

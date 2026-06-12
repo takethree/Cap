@@ -1,8 +1,14 @@
+import { serverEnv } from "@cap/env";
 import { STRIPE_AVAILABLE, stripe } from "@cap/utils";
 import { type ImageUpload, Organisation, User } from "@cap/web-domain";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import type { MySql2Database } from "drizzle-orm/mysql2";
-import type { Adapter } from "next-auth/adapters";
+import type {
+	Adapter,
+	AdapterAccount,
+	AdapterSession,
+	AdapterUser,
+} from "next-auth/adapters";
 import type Stripe from "stripe";
 import { nanoId } from "../helpers.ts";
 import {
@@ -14,10 +20,11 @@ import {
 	users,
 	verificationTokens,
 } from "../schema.ts";
+import { resolveNewUserOrganizationPlan } from "./domain-utils.ts";
 
 export function DrizzleAdapter(db: MySql2Database): Adapter {
 	return {
-		async createUser(userData: any) {
+		async createUser(userData: Omit<AdapterUser, "id">) {
 			const normalizedEmail = (userData.email as string)?.toLowerCase() ?? "";
 			const userId = User.UserId.make(nanoId());
 			await db.transaction(async (tx) => {
@@ -41,7 +48,51 @@ export function DrizzleAdapter(db: MySql2Database): Adapter {
 					activeOrganizationId: Organisation.OrganisationId.make(""),
 				});
 
-				if (pendingInvite) {
+				const organizationPlan = resolveNewUserOrganizationPlan({
+					email: normalizedEmail,
+					hasPendingInvite: Boolean(pendingInvite),
+					rulesConfig: serverEnv().CAP_AUTO_JOIN_ORGANIZATION_RULES,
+				});
+
+				if (organizationPlan.type === "pending-invite") {
+					return;
+				}
+
+				if (organizationPlan.type === "auto-join") {
+					const [targetOrganization] = await tx
+						.select({ id: organizations.id })
+						.from(organizations)
+						.where(
+							and(
+								eq(organizations.id, organizationPlan.organizationId),
+								isNull(organizations.tombstoneAt),
+							),
+						)
+						.limit(1);
+
+					if (!targetOrganization) {
+						console.error("Auto-join organization is unavailable", {
+							emailDomain: normalizedEmail.split("@").at(1) ?? "",
+							organizationId: organizationPlan.organizationId,
+						});
+						throw new Error("Auto-join organization is unavailable");
+					}
+
+					await tx.insert(organizationMembers).values({
+						id: nanoId(),
+						organizationId: organizationPlan.organizationId,
+						userId,
+						role: "member",
+					});
+
+					await tx
+						.update(users)
+						.set({
+							activeOrganizationId: organizationPlan.organizationId,
+							defaultOrgId: organizationPlan.organizationId,
+						})
+						.where(eq(users.id, userId));
+
 					return;
 				}
 
@@ -202,7 +253,7 @@ export function DrizzleAdapter(db: MySql2Database): Adapter {
 		async deleteUser(userId) {
 			await db.delete(users).where(eq(users.id, User.UserId.make(userId)));
 		},
-		async linkAccount(account: any) {
+		async linkAccount(account: AdapterAccount) {
 			await db.insert(accounts).values({
 				id: User.UserId.make(nanoId()),
 				userId: account.userId,
@@ -218,7 +269,10 @@ export function DrizzleAdapter(db: MySql2Database): Adapter {
 				token_type: account.token_type,
 			});
 		},
-		async unlinkAccount({ providerAccountId, provider }: any) {
+		async unlinkAccount({
+			providerAccountId,
+			provider,
+		}: Pick<AdapterAccount, "providerAccountId" | "provider">) {
 			await db
 				.delete(accounts)
 				.where(
@@ -272,10 +326,12 @@ export function DrizzleAdapter(db: MySql2Database): Adapter {
 				},
 			};
 		},
-		async updateSession(session: any) {
+		async updateSession(
+			session: Partial<AdapterSession> & Pick<AdapterSession, "sessionToken">,
+		) {
 			await db
 				.update(sessions)
-				.set(session as any)
+				.set(session as Partial<typeof sessions.$inferInsert>)
 				.where(eq(sessions.sessionToken, session.sessionToken));
 			const rows = await db
 				.select()

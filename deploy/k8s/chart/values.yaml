@@ -108,6 +108,8 @@ web:
   nodeEnv: production
   defaultVideosPublic: "true"
   allowedSignupDomains: ""
+  autoJoinOrganizationRules: ""
+  autoShareNewVideosToOrgRoot: "false"
   initImage: busybox:1.36
   configEnv: {}
   extraEnv: []
