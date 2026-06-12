@@ -145,6 +145,7 @@ const AdminNavItems = ({ toggleMobileNav }: Props) => {
 	const isDomainSetupVerified =
 		activeOrg?.organization.customDomain &&
 		activeOrg?.organization.domainVerified;
+	const showOrganizationMetadata = isCapCloud && !sidebarCollapsed;
 
 	return (
 		<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -162,7 +163,12 @@ const AdminNavItems = ({ toggleMobileNav }: Props) => {
 							}}
 							className={clsx(
 								"mt-1.5 mx-auto rounded-xl cursor-pointer bg-gray-3",
-								sidebarCollapsed ? "w-fit px-2 py-0.5" : "w-full p-2.5",
+								sidebarCollapsed
+									? "w-fit px-2 py-0.5"
+									: clsx(
+											"w-full px-2.5",
+											showOrganizationMetadata ? "py-2.5" : "py-1.5",
+										),
 							)}
 						>
 							<div
@@ -197,7 +203,14 @@ const AdminNavItems = ({ toggleMobileNav }: Props) => {
 											)}
 										/>
 									</div>
-									<div className="flex flex-col flex-1 items-center h-10">
+									<div
+										className={clsx(
+											"flex flex-col flex-1 items-center min-w-0",
+											sidebarCollapsed || showOrganizationMetadata
+												? "h-10"
+												: "justify-center",
+										)}
+									>
 										<div className="flex justify-between items-center w-full">
 											{!sidebarCollapsed && (
 												<p className="text-sm truncate leading-0 text-gray-12">
@@ -212,7 +225,7 @@ const AdminNavItems = ({ toggleMobileNav }: Props) => {
 												/>
 											)}
 										</div>
-										{isCapCloud && !sidebarCollapsed && (
+										{showOrganizationMetadata && (
 											<Link
 												href={
 													isDomainSetupVerified
