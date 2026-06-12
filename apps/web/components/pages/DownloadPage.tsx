@@ -1,5 +1,6 @@
 "use client";
 
+import { buildEnv } from "@cap/env";
 import { Button } from "@cap/ui";
 import { useDetectPlatform } from "hooks/useDetectPlatform";
 import Link from "next/link";
@@ -18,10 +19,11 @@ export const DownloadPage = () => {
 	const [copiedCliCommand, setCopiedCliCommand] = useState(false);
 	const loading = platform === null;
 	const primaryDownloadUrl = getDownloadUrl(platform, isIntel);
+	const cliInstallBaseUrl = buildEnv.NEXT_PUBLIC_WEB_URL.replace(/\/$/, "");
 	const cliInstallCommand =
 		platform === "windows"
-			? "irm https://cap.so/install-cli.ps1 | iex"
-			: "curl -fsSL https://cap.so/install-cli.sh | sh";
+			? `irm ${cliInstallBaseUrl}/install-cli.ps1 | iex`
+			: `curl -fsSL ${cliInstallBaseUrl}/install-cli.sh | sh`;
 
 	const trackDownloadClick = (ctaLocation: string, targetUrl: string) => {
 		trackEvent("download_cta_clicked", {

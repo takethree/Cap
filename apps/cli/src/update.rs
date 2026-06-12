@@ -2,13 +2,13 @@ use std::process::{Command, Output};
 
 use serde::Serialize;
 
-use crate::{OutputFormat, write_json};
+use crate::{distribution, OutputFormat, write_json};
 
 #[cfg(target_os = "macos")]
 const MACOS_UPDATE_SCRIPT: &str = r#"set -eu
 tmp="$(mktemp "${TMPDIR:-/tmp}/cap-update.XXXXXX")"
 trap 'rm -f "$tmp"' EXIT HUP INT TERM
-curl -fsSL https://cap.so/install-cli.sh -o "$tmp"
+curl -fsSL __CAP_INSTALLER_BASE_URL__/install-cli.sh -o "$tmp"
 CAP_DESKTOP_FORCE_INSTALL=1 sh "$tmp"
 "#;
 
@@ -19,7 +19,7 @@ try {
 	Wait-Process -Id $parentPid -Timeout 30 -ErrorAction SilentlyContinue
 } catch {}
 $env:CAP_DESKTOP_FORCE_INSTALL = "1"
-irm https://cap.so/install-cli.ps1 | iex
+irm __CAP_INSTALLER_BASE_URL__/install-cli.ps1 | iex
 "#;
 
 #[derive(Serialize)]
@@ -73,15 +73,20 @@ pub fn run(format: OutputFormat) -> Result<(), String> {
 
 #[cfg(target_os = "macos")]
 fn update_command() -> Result<Command, String> {
+    let script = MACOS_UPDATE_SCRIPT.replace(
+        "__CAP_INSTALLER_BASE_URL__",
+        distribution::installer_base_url(),
+    );
     let mut command = Command::new("sh");
-    command.args(["-c", MACOS_UPDATE_SCRIPT]);
+    command.args(["-c", &script]);
     Ok(command)
 }
 
 #[cfg(windows)]
 fn start_windows_update() -> Result<(), String> {
-    let script =
-        WINDOWS_UPDATE_SCRIPT.replace("__CAP_PARENT_PID__", &std::process::id().to_string());
+    let script = WINDOWS_UPDATE_SCRIPT
+        .replace("__CAP_PARENT_PID__", &std::process::id().to_string())
+        .replace("__CAP_INSTALLER_BASE_URL__", distribution::installer_base_url());
     let mut command = Command::new("powershell");
     command.args([
         "-NoProfile",
@@ -103,13 +108,13 @@ fn update_command() -> Result<Command, String> {
 }
 
 #[cfg(target_os = "macos")]
-const fn installer_url() -> &'static str {
-    "https://cap.so/install-cli.sh"
+fn installer_url() -> &'static str {
+    distribution::installer_base_url()
 }
 
 #[cfg(windows)]
-const fn installer_url() -> &'static str {
-    "https://cap.so/install-cli.ps1"
+fn installer_url() -> &'static str {
+    distribution::installer_base_url()
 }
 
 #[cfg(not(any(target_os = "macos", windows)))]

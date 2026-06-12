@@ -54,6 +54,10 @@ function isCachedProfileForUser(
 	return cachedProfile?.userId === (userId ?? null);
 }
 
+async function manualDownloadUrl(path = "/download") {
+	return new URL(path, await getConfiguredServerUrl()).toString();
+}
+
 async function loadProfileImageObjectUrl(signal: AbortSignal) {
 	const imageUrl = new URL(
 		"/api/desktop/user/profile/image",
@@ -426,7 +430,7 @@ export default function Settings(props: RouteSectionProps) {
 		} catch (e) {
 			console.error("Failed to check for updates:", e);
 			await dialog.message(
-				"Unable to check for updates. Please download the latest version manually from cap.so/download. Your data will not be lost.\n\nIf this issue persists, please contact support.",
+				`Unable to check for updates. Please download the latest version manually from ${await manualDownloadUrl()}. Your data will not be lost.\n\nIf this issue persists, please contact support.`,
 				{ title: "Update Error", kind: "error" },
 			);
 		} finally {
@@ -504,7 +508,9 @@ export default function Settings(props: RouteSectionProps) {
 										type="button"
 										class="text-gray-11 hover:text-gray-12 underline transition-colors"
 										onClick={() =>
-											shell.open("https://cap.so/download/versions")
+											void manualDownloadUrl("/download/versions").then(
+												shell.open,
+											)
 										}
 									>
 										View previous versions

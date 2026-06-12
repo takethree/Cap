@@ -62,6 +62,8 @@ jobs:
           build-args: |
             NEXT_PUBLIC_DOCKER_BUILD=true
             NEXT_PUBLIC_WEB_URL=${{ env.PUBLIC_WEB_URL }}
+            TAKE3_DESKTOP_RELEASE_REPOSITORY=${{ github.repository }}
+            TAKE3_DESKTOP_RELEASE_TAG_PREFIX=take3-desktop-
           cache-from: type=gha,scope=cap-web
 
       - name: Build and push media server image

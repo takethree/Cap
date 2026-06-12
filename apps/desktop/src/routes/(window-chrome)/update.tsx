@@ -4,6 +4,7 @@ import { getCurrentWindow, UserAttentionType } from "@tauri-apps/api/window";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check } from "@tauri-apps/plugin-updater";
 import { createResource, createSignal, Match, Show, Switch } from "solid-js";
+import { getConfiguredServerUrl } from "~/utils/web-api";
 
 export default function () {
 	const navigate = useNavigate();
@@ -21,14 +22,19 @@ export default function () {
 		}
 	});
 
+	const [manualDownload] = createResource(async () =>
+		new URL("/download", await getConfiguredServerUrl()).toString(),
+	);
+
 	return (
 		<div class="flex flex-col justify-center flex-1 items-center gap-12 p-4 text-[0.875rem] font-normal h-full">
 			<Show when={updateError()}>
 				<div class="flex flex-col gap-4 items-center text-center max-w-md">
 					<p class="text-(--text-primary)">{updateError()}</p>
 					<p class="text-(--text-tertiary)">
-						Please download the latest version manually from cap.so/download.
-						Your data will not be lost.
+						Please download the latest version manually from{" "}
+						{manualDownload() ?? "the configured Cap server"}. Your data will
+						not be lost.
 					</p>
 					<p class="text-(--text-tertiary) text-xs">
 						If this issue persists, please contact support.

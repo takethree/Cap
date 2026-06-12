@@ -1550,7 +1550,7 @@ export default function () {
 }
 
 let hasChecked = false;
-function createUpdateCheck() {
+function createUpdateCheck(serverUrl: () => string) {
 	if (import.meta.env.DEV) return;
 
 	const navigate = useNavigate();
@@ -1567,8 +1567,9 @@ function createUpdateCheck() {
 			if (result) update = result;
 		} catch (e) {
 			console.error("Failed to check for updates:", e);
+			const downloadUrl = new URL("/download", serverUrl()).toString();
 			await dialog.message(
-				"Unable to check for updates. Please download the latest version manually from cap.so/download. Your data will not be lost.\n\nIf this issue persists, please contact support.",
+				`Unable to check for updates. Please download the latest version manually from ${downloadUrl}. Your data will not be lost.\n\nIf this issue persists, please contact support.`,
 				{ title: "Update Error", kind: "error" },
 			);
 			return;
@@ -2062,7 +2063,7 @@ function Page() {
 
 	const setCamera = createCameraMutation();
 
-	createUpdateCheck();
+	createUpdateCheck(serverUrl);
 
 	onMount(async () => {
 		if (document.activeElement instanceof HTMLElement) {
