@@ -31,9 +31,9 @@
 		"effect": "^3.18.4",
 		"mysql2": "^3.15.2",
 		"nanoid": "^5.0.4",
-		"next": "15.5.9",
+		"next": "15.5.18",
 		"next-auth": "^4.24.5",
-		"nodemailer": "^6.10.1",
+		"nodemailer": "^9.0.1",
 		"react-email": "^4.0.16",
 		"resend": "4.6.0",
 		"zod": "^3"
