@@ -97,6 +97,18 @@ function createServerEnv() {
 				),
 
 			/// AI providers
+			AI_GATEWAY_BASE_URL: z
+				.string()
+				.optional()
+				.describe("OpenAI-compatible LiteLLM gateway base URL"),
+			AI_GATEWAY_API_KEY: z
+				.string()
+				.optional()
+				.describe("LiteLLM virtual key for AI summaries and chat"),
+			AI_GATEWAY_MODEL: z
+				.string()
+				.optional()
+				.describe("LiteLLM public model name for AI summaries and chat"),
 			DEEPGRAM_API_KEY: z.string().optional().describe("Audio transcription"),
 			ANTHROPIC_API_KEY: z.string().optional().describe("AI chat"),
 			OPENAI_API_KEY: z.string().optional().describe("AI summaries"),

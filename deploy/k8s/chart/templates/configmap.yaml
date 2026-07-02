@@ -47,6 +47,10 @@ data:
   {{- if .Values.web.defaultSignupOrganizationId }}
   CAP_DEFAULT_SIGNUP_ORGANIZATION_ID: {{ .Values.web.defaultSignupOrganizationId | quote }}
   {{- end }}
+  {{- if .Values.aiGateway.enabled }}
+  AI_GATEWAY_BASE_URL: {{ required "aiGateway.baseUrl is required when aiGateway.enabled=true" .Values.aiGateway.baseUrl | quote }}
+  AI_GATEWAY_MODEL: {{ default "openai/gpt-oss-120b" .Values.aiGateway.model | quote }}
+  {{- end }}
   {{- range $key, $value := .Values.web.configEnv }}
   {{ $key }}: {{ $value | quote }}
   {{- end }}

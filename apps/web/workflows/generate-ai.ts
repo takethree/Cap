@@ -13,6 +13,12 @@ import {
 import { and, eq } from "drizzle-orm";
 import { Effect, Option } from "effect";
 import { FatalError } from "workflow";
+import {
+	callAiGatewayChat,
+	isAiGatewayConfigured,
+	isAiProviderConfigured,
+	isLegacyDirectAiEnabled,
+} from "@/lib/ai-gateway-client";
 import { GROQ_MODEL, getGroqClient } from "@/lib/groq-client";
 import { runPromise } from "@/lib/server";
 import { decodeStorageVideo } from "@/lib/video-storage";
@@ -102,9 +108,8 @@ export async function generateAiWorkflow(payload: GenerateAiWorkflowPayload) {
 async function validateAndSetProcessing(videoId: string): Promise<VideoData> {
 	"use step";
 
-	const groqClient = getGroqClient();
-	if (!groqClient && !serverEnv().OPENAI_API_KEY) {
-		throw new FatalError("Missing Groq or OpenAI API key");
+	if (!isAiProviderConfigured()) {
+		throw new FatalError("Missing AI gateway API key");
 	}
 
 	const query = await db()
@@ -203,7 +208,10 @@ async function generateWithAi(
 ): Promise<AiResult> {
 	"use step";
 
-	const groqClient = getGroqClient();
+	const groqClient =
+		isLegacyDirectAiEnabled() && !isAiGatewayConfigured()
+			? getGroqClient()
+			: null;
 	const chunks = chunkTranscriptWithTimestamps(transcript.segments);
 
 	const videoDuration = getVideoDuration(transcript.segments);
@@ -410,6 +418,16 @@ async function callAiApi(
 	prompt: string,
 	groqClient: ReturnType<typeof getGroqClient>,
 ): Promise<string> {
+	if (isAiGatewayConfigured()) {
+		return callAiGatewayChat({
+			messages: [{ role: "user", content: prompt }],
+		});
+	}
+
+	if (!isLegacyDirectAiEnabled()) {
+		throw new Error("AI gateway is required in production");
+	}
+
 	if (groqClient) {
 		try {
 			const completion = await groqClient.chat.completions.create({

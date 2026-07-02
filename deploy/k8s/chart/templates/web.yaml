@@ -101,6 +101,7 @@ spec:
                 secretKeyRef:
                   name: {{ include "cap.secretName" . }}
                   key: {{ .Values.runtimeSecret.keys.deepgramApiKey }}
+            {{- if not .Values.aiGateway.enabled }}
             - name: GROQ_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -111,11 +112,29 @@ spec:
                 secretKeyRef:
                   name: {{ include "cap.secretName" . }}
                   key: {{ .Values.runtimeSecret.keys.openaiApiKey }}
+            {{- end }}
             - name: REPLICATE_API_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ include "cap.secretName" . }}
                   key: {{ .Values.runtimeSecret.keys.replicateApiToken }}
+            {{- end }}
+            {{- if .Values.aiGateway.enabled }}
+            - name: AI_GATEWAY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.aiGatewayApiKey }}
+            - name: AI_GATEWAY_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: AI_GATEWAY_BASE_URL
+            - name: AI_GATEWAY_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: AI_GATEWAY_MODEL
             {{- end }}
             {{- if .Values.workflow.enabled }}
             - name: WORKFLOW_TARGET_WORLD
