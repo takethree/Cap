@@ -8,7 +8,7 @@
 use serde::Serialize;
 use serde_json::Value;
 
-use crate::{distribution, OutputFormat, write_json};
+use crate::{OutputFormat, distribution, write_json};
 
 #[derive(Serialize, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -30,16 +30,18 @@ pub struct Credentials {
 
 fn load_desktop_store() -> Option<Value> {
     let data_dir = dirs::data_dir()?;
-    distribution::desktop_bundle_ids().into_iter().find_map(|id| {
-        let bytes = std::fs::read(data_dir.join(id).join("store")).ok()?;
-        let store: Value = serde_json::from_slice(&bytes).ok()?;
-        // Only accept a store that actually carries an auth secret.
-        store
-            .get("auth")
-            .and_then(|auth| auth.get("secret"))
-            .is_some()
-            .then_some(store)
-    })
+    distribution::desktop_bundle_ids()
+        .into_iter()
+        .find_map(|id| {
+            let bytes = std::fs::read(data_dir.join(id).join("store")).ok()?;
+            let store: Value = serde_json::from_slice(&bytes).ok()?;
+            // Only accept a store that actually carries an auth secret.
+            store
+                .get("auth")
+                .and_then(|auth| auth.get("secret"))
+                .is_some()
+                .then_some(store)
+        })
 }
 
 fn store_api_key(store: &Value) -> Option<String> {

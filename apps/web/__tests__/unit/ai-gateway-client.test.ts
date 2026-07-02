@@ -27,12 +27,15 @@ describe("ai-gateway-client", () => {
 	});
 
 	it("calls the OpenAI-compatible LiteLLM chat completions endpoint", async () => {
-		const fetchMock = vi.fn(async () => ({
-			ok: true,
-			json: async () => ({
-				choices: [{ message: { content: "gateway response" } }],
-			}),
-		}));
+		const fetchMock = vi.fn(
+			async (_input: Parameters<typeof fetch>[0], _init?: RequestInit) =>
+				({
+					ok: true,
+					json: async () => ({
+						choices: [{ message: { content: "gateway response" } }],
+					}),
+				}) as Response,
+		);
 		vi.stubGlobal("fetch", fetchMock);
 
 		const result = await callAiGatewayChat({
@@ -52,7 +55,9 @@ describe("ai-gateway-client", () => {
 				},
 			}),
 		);
-		const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+		const [, requestInit] = fetchMock.mock.calls[0] ?? [];
+		expect(requestInit).toBeDefined();
+		const body = JSON.parse(requestInit?.body as string);
 		expect(body).toMatchObject({
 			model: "openai/gpt-oss-120b",
 			messages: [{ role: "user", content: "hello" }],
@@ -63,19 +68,24 @@ describe("ai-gateway-client", () => {
 
 	it("uses the default CAP route model when the model env var is omitted", async () => {
 		env.current.AI_GATEWAY_MODEL = undefined;
-		const fetchMock = vi.fn(async () => ({
-			ok: true,
-			json: async () => ({
-				choices: [{ message: { content: "ok" } }],
-			}),
-		}));
+		const fetchMock = vi.fn(
+			async (_input: Parameters<typeof fetch>[0], _init?: RequestInit) =>
+				({
+					ok: true,
+					json: async () => ({
+						choices: [{ message: { content: "ok" } }],
+					}),
+				}) as Response,
+		);
 		vi.stubGlobal("fetch", fetchMock);
 
 		await callAiGatewayChat({
 			messages: [{ role: "user", content: "hello" }],
 		});
 
-		const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+		const [, requestInit] = fetchMock.mock.calls[0] ?? [];
+		expect(requestInit).toBeDefined();
+		const body = JSON.parse(requestInit?.body as string);
 		expect(body.model).toBe(DEFAULT_AI_GATEWAY_MODEL);
 	});
 
