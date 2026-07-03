@@ -22,6 +22,7 @@ runtimeSecret:
     mediaServerWebhookSecret: media-server-webhook-secret
     smtpUsername: smtp-username
     smtpPassword: smtp-password
+    aiGatewayApiKey: ai-gateway-api-key
     openaiApiKey: openai-api-key
     groqApiKey: groq-api-key
     deepgramApiKey: deepgram-api-key
@@ -40,6 +41,7 @@ runtimeSecret:
     mediaServerWebhookSecret: ""
     smtpUsername: ""
     smtpPassword: ""
+    aiGatewayApiKey: ""
     openaiApiKey: ""
     groqApiKey: ""
     deepgramApiKey: ""
@@ -51,6 +53,11 @@ runtimeSecret:
 
 providerKeys:
   enabled: false
+
+aiGateway:
+  enabled: false
+  baseUrl: ""
+  model: openai/gpt-oss-120b
 
 workflow:
   enabled: false

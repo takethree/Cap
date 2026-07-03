@@ -12,6 +12,13 @@ vi.mock("@cap/web-backend", () => ({
 	Storage: {},
 }));
 
+vi.mock("@/lib/ai-gateway-client", () => ({
+	isAiProviderConfigured: vi.fn(() => true),
+	isAiGatewayConfigured: vi.fn(() => false),
+	isLegacyDirectAiEnabled: vi.fn(() => false),
+	callAiGatewayChat: vi.fn(),
+}));
+
 vi.mock("@/lib/groq-client", () => ({
 	GROQ_MODEL: "test-model",
 	getGroqClient: vi.fn(() => null),

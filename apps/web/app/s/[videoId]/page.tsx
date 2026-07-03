@@ -42,6 +42,7 @@ import {
 	getDashboardData,
 	type OrganizationSettings,
 } from "@/app/(org)/dashboard/dashboard-data";
+import { isAiProviderConfigured } from "@/lib/ai-gateway-client";
 import { completeDesktopSegmentsManifestAndQueue } from "@/lib/desktop-segments-recovery";
 import { createNotification } from "@/lib/Notification";
 import {
@@ -551,7 +552,7 @@ async function AuthorizedContent({
 	const env = serverEnv();
 	const transcriptionGenerationAvailable =
 		Boolean(env.DEEPGRAM_API_KEY) && !rules.settings.disableTranscript;
-	const aiProviderAvailable = Boolean(env.GROQ_API_KEY || env.OPENAI_API_KEY);
+	const aiProviderAvailable = isAiProviderConfigured();
 
 	let aiGenerationEnabled = false;
 	const videoOwnerQuery = await db()

@@ -8,6 +8,7 @@ import { provideOptionalAuth, VideosPolicy } from "@cap/web-backend";
 import { Policy, type Video } from "@cap/web-domain";
 import { eq } from "drizzle-orm";
 import { Effect, Exit } from "effect";
+import { isAiProviderConfigured } from "@/lib/ai-gateway-client";
 import {
 	isRetryableDesktopSegmentsFinalizationError,
 	queueDesktopSegmentsFinalization,
@@ -156,7 +157,7 @@ export async function getVideoStatus(
 		video.transcriptionStatus === "COMPLETE" &&
 		!metadata.aiGenerationStatus &&
 		!metadata.summary &&
-		(serverEnv().GROQ_API_KEY || serverEnv().OPENAI_API_KEY);
+		isAiProviderConfigured();
 
 	if (shouldTriggerAiGeneration) {
 		try {

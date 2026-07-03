@@ -2,6 +2,11 @@ import "server-only";
 
 import type { MessengerMessageRole } from "@cap/database/schema";
 import { serverEnv } from "@cap/env";
+import {
+	callAiGatewayChat,
+	isAiGatewayConfigured,
+	isLegacyDirectAiEnabled,
+} from "@/lib/ai-gateway-client";
 import { GROQ_MODEL, getGroqClient } from "@/lib/groq-client";
 import { CAP_REFERENCE_GUIDE, MESSENGER_AGENT_PROMPT } from "./constants";
 import { getKnowledgeTag, searchSupermemory } from "./supermemory";
@@ -190,6 +195,26 @@ const callGroq = async ({
 	return content.trim();
 };
 
+const callAiGateway = async ({
+	systemPrompt,
+	history,
+}: {
+	systemPrompt: string;
+	history: ConversationMessage[];
+}) => {
+	if (!isAiGatewayConfigured()) return null;
+
+	return callAiGatewayChat({
+		temperature: 0.65,
+		maxTokens: 500,
+		messages: [
+			{ role: "system", content: systemPrompt },
+			...mapHistoryForLlm(history),
+		],
+		signal: AbortSignal.timeout(35000),
+	});
+};
+
 export const generateMessengerAgentReply = async ({
 	userIdentity,
 	identityTag,
@@ -216,6 +241,15 @@ export const generateMessengerAgentReply = async ({
 		userIdentity,
 		context: normalizeContext([...knowledgeContext, ...personalContext]),
 	});
+
+	const fromGateway = await callAiGateway({ systemPrompt, history }).catch(
+		() => null,
+	);
+	if (fromGateway) return fromGateway;
+
+	if (!isLegacyDirectAiEnabled()) {
+		return "Oh no, I'm so sorry about this! I'm having a little technical hiccup on my end. Someone from the team will jump in here shortly to help you out though!";
+	}
 
 	const fromAnthropic = await callAnthropic({ systemPrompt, history }).catch(
 		() => null,

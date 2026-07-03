@@ -1,3 +1,4 @@
+import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GET as getPlatformDownload } from "@/app/(site)/download/[platform]/route";
 import { GET as getCmdInstaller } from "@/app/install-cli.cmd/route";
@@ -106,7 +107,7 @@ describe("Take-3 download route", () => {
 			);
 
 		const response = await getPlatformDownload(
-			new Request("https://cap.take3tech.dev/download/windows"),
+			new NextRequest("https://cap.take3tech.dev/download/windows"),
 			{ params: Promise.resolve({ platform: "windows" }) },
 		);
 

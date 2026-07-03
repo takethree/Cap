@@ -2,7 +2,7 @@ use std::process::{Command, Output};
 
 use serde::Serialize;
 
-use crate::{distribution, OutputFormat, write_json};
+use crate::{OutputFormat, distribution, write_json};
 
 #[cfg(target_os = "macos")]
 const MACOS_UPDATE_SCRIPT: &str = r#"set -eu
@@ -86,7 +86,10 @@ fn update_command() -> Result<Command, String> {
 fn start_windows_update() -> Result<(), String> {
     let script = WINDOWS_UPDATE_SCRIPT
         .replace("__CAP_PARENT_PID__", &std::process::id().to_string())
-        .replace("__CAP_INSTALLER_BASE_URL__", distribution::installer_base_url());
+        .replace(
+            "__CAP_INSTALLER_BASE_URL__",
+            distribution::installer_base_url(),
+        );
     let mut command = Command::new("powershell");
     command.args([
         "-NoProfile",

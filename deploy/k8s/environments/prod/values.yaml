@@ -18,6 +18,10 @@ serviceAccount:
     eks.amazonaws.com/role-arn: arn:aws:iam::159207264407:role/IRSA-takethree-cap-web
 providerKeys:
   enabled: true
+aiGateway:
+  enabled: true
+  baseUrl: http://ai-gateway-litellm.ai-gateway.svc.cluster.local:4000/v1
+  model: openai/gpt-oss-120b
 workflow:
   enabled: true
 cron:
