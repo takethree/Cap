@@ -5,7 +5,7 @@ web:
     pullPolicy: IfNotPresent
   publicUrl: https://cap.take3tech.dev
   nextauthUrl: https://cap.take3tech.dev
-  allowedSignupDomains: take3tech.com
+  allowedSignupDomains: take3tech.com,megastarfinancial.com
   defaultSignupOrganizationId: m0tmhvagbmea7aj
 mediaServer:
   image:
