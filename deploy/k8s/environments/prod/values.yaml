@@ -1,16 +1,22 @@
 web:
   image:
     repository: 159207264407.dkr.ecr.us-east-2.amazonaws.com/cap-web
-    tag: sha-2dce2f51924b87d503b207d497ea7014266926c5
+    tag: sha-dae1b74b46ef973721201ef8c9ea138dbd2409af
     pullPolicy: IfNotPresent
   publicUrl: https://cap.take3tech.dev
   nextauthUrl: https://cap.take3tech.dev
   allowedSignupDomains: take3tech.com,megastarfinancial.com
   defaultSignupOrganizationId: m0tmhvagbmea7aj
+  extraEnv:
+    - name: CAP_SIGNUP_DOMAIN_ORGANIZATION_MAP
+      valueFrom:
+        configMapKeyRef:
+          name: cap-signup-routing
+          key: CAP_SIGNUP_DOMAIN_ORGANIZATION_MAP
 mediaServer:
   image:
     repository: 159207264407.dkr.ecr.us-east-2.amazonaws.com/cap-media-server
-    tag: sha-2dce2f51924b87d503b207d497ea7014266926c5
+    tag: sha-dae1b74b46ef973721201ef8c9ea138dbd2409af
     pullPolicy: IfNotPresent
 serviceAccount:
   name: cap-web
