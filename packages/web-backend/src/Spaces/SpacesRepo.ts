@@ -20,10 +20,36 @@ export class SpacesRepo extends Effect.Service<SpacesRepo>()("SpacesRepo", {
 								Db.spaceVideos,
 								Dz.eq(Db.spaceMembers.spaceId, Db.spaceVideos.spaceId),
 							)
+							.innerJoin(Db.spaces, Dz.eq(Db.spaces.id, Db.spaceVideos.spaceId))
+							.innerJoin(
+								Db.videos,
+								Dz.and(
+									Dz.eq(Db.videos.id, Db.spaceVideos.videoId),
+									Dz.eq(Db.videos.orgId, Db.spaces.organizationId),
+								),
+							)
+							.innerJoin(
+								Db.organizations,
+								Dz.eq(Db.organizations.id, Db.spaces.organizationId),
+							)
+							.leftJoin(
+								Db.organizationMembers,
+								Dz.and(
+									Dz.eq(
+										Db.organizationMembers.organizationId,
+										Db.spaces.organizationId,
+									),
+									Dz.eq(Db.organizationMembers.userId, userId),
+								),
+							)
 							.where(
 								Dz.and(
 									Dz.eq(Db.spaceMembers.userId, userId),
 									Dz.eq(Db.spaceVideos.videoId, videoId),
+									Dz.or(
+										Dz.eq(Db.organizations.ownerId, userId),
+										Dz.eq(Db.organizationMembers.userId, userId),
+									),
 								),
 							),
 					)

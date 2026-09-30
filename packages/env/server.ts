@@ -101,6 +101,12 @@ function createServerEnv() {
 				.describe(
 					"JSON object mapping exact signup email domains to existing private space ids",
 				),
+			CAP_SIGNUP_DOMAIN_ORGANIZATION_MAP: z
+				.string()
+				.optional()
+				.describe(
+					"JSON object mapping exact signup email domains to existing organizations",
+				),
 
 			/// AI providers
 			AI_GATEWAY_BASE_URL: z

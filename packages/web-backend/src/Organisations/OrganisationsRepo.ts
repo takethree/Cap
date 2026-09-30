@@ -24,6 +24,13 @@ export class OrganisationsRepo extends Effect.Service<OrganisationsRepo>()(
 									Db.sharedVideos.organizationId,
 								),
 							)
+							.innerJoin(
+								Db.videos,
+								Dz.and(
+									Dz.eq(Db.videos.id, Db.sharedVideos.videoId),
+									Dz.eq(Db.videos.orgId, Db.sharedVideos.organizationId),
+								),
+							)
 							.where(
 								Dz.and(
 									Dz.eq(Db.organizationMembers.userId, userId),

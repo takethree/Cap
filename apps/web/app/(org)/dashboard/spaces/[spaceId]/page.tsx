@@ -267,6 +267,7 @@ export default async function SharedCapsPage(props: {
 					.where(
 						and(
 							eq(spaceVideos.spaceId, spaceId),
+							eq(videos.orgId, space.organizationId),
 							isNull(spaceVideos.folderId),
 							isNull(organizations.tombstoneAt),
 						),
@@ -289,8 +290,13 @@ export default async function SharedCapsPage(props: {
 				db()
 					.select({ count: count() })
 					.from(spaceVideos)
+					.innerJoin(videos, eq(spaceVideos.videoId, videos.id))
 					.where(
-						and(eq(spaceVideos.spaceId, spaceId), isNull(spaceVideos.folderId)),
+						and(
+							eq(spaceVideos.spaceId, spaceId),
+							eq(videos.orgId, space.organizationId),
+							isNull(spaceVideos.folderId),
+						),
 					),
 			]);
 			return {
@@ -391,6 +397,7 @@ export default async function SharedCapsPage(props: {
 					.where(
 						and(
 							eq(sharedVideos.organizationId, orgId),
+							eq(videos.orgId, orgId),
 							isNull(sharedVideos.folderId),
 						),
 					)
@@ -416,6 +423,7 @@ export default async function SharedCapsPage(props: {
 					.where(
 						and(
 							eq(sharedVideos.organizationId, orgId),
+							eq(videos.orgId, orgId),
 							isNull(videos.folderId),
 						),
 					),

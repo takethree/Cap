@@ -26,6 +26,7 @@ export async function addVideosToSpace(
 		}
 
 		const isAllSpacesEntry = user.activeOrganizationId === spaceId;
+		let targetOrganizationId = user.activeOrganizationId;
 
 		if (isAllSpacesEntry) {
 			await requireOrganizationSettingsManager(user.id, spaceId);
@@ -36,12 +37,19 @@ export async function addVideosToSpace(
 					"You don't have permission to add videos to this space",
 				);
 			}
+			targetOrganizationId = access.organizationId;
 		}
 
 		const userVideos = await db()
 			.select({ id: videos.id })
 			.from(videos)
-			.where(and(eq(videos.ownerId, user.id), inArray(videos.id, videoIds)));
+			.where(
+				and(
+					eq(videos.ownerId, user.id),
+					eq(videos.orgId, targetOrganizationId),
+					inArray(videos.id, videoIds),
+				),
+			);
 
 		const validVideoIds = userVideos.map((v) => v.id);
 

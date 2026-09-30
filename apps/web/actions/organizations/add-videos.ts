@@ -69,7 +69,13 @@ export async function addVideosToOrganization(
 		const userVideos = await db()
 			.select({ id: videos.id })
 			.from(videos)
-			.where(and(eq(videos.ownerId, user.id), inArray(videos.id, videoIds)));
+			.where(
+				and(
+					eq(videos.ownerId, user.id),
+					eq(videos.orgId, organizationId),
+					inArray(videos.id, videoIds),
+				),
+			);
 
 		const validVideoIds = userVideos.map((v) => v.id);
 

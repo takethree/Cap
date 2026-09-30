@@ -2,6 +2,7 @@
 
 import { db } from "@cap/database";
 import { getCurrentUser } from "@cap/database/auth/session";
+import { getSignupOrganizationId } from "@cap/database/auth/signup-organization";
 import { sendEmail } from "@cap/database/emails/config";
 import { OrganizationInvite } from "@cap/database/emails/organization-invite";
 import { nanoId } from "@cap/database/helpers";
@@ -66,6 +67,11 @@ export async function sendOrganizationInvites(
 			typeof inviteInput === "string" ? inviteInput : inviteInput.email;
 		const normalizedEmail = email.trim().toLowerCase();
 		if (!emailRegex.test(normalizedEmail)) continue;
+		const assignedOrganizationId = getSignupOrganizationId(normalizedEmail);
+		if (assignedOrganizationId && assignedOrganizationId !== organizationId)
+			throw new Error(
+				"Invitation conflicts with the recipient's assigned organization",
+			);
 
 		const inviteRole =
 			typeof inviteInput === "string" || !inviteInput.role

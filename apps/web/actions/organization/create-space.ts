@@ -18,6 +18,10 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { isOrganizationOwnerPro } from "@/lib/org-pro";
 import {
+	assertUsersBelongToOrganization,
+	requireOrganizationAccess,
+} from "./authorization";
+import {
 	getSpaceSettingsFromFormData,
 	hasProSpaceSettingsEnabled,
 } from "./space-settings";
@@ -45,6 +49,10 @@ export async function createSpace(
 		}
 
 		const name = formData.get("name") as string;
+		const organizationAccess = await requireOrganizationAccess(
+			user.id,
+			user.activeOrganizationId,
+		);
 		const passwordEnabled = formData.get("passwordEnabled") === "true";
 		const password = formData.get("password") as string | null;
 		const publicEnabled = formData.get("public") === "true";
@@ -138,6 +146,11 @@ export async function createSpace(
 			if (!memberUserIds.includes(user.id)) {
 				memberUserIds.push(user.id);
 			}
+			await assertUsersBelongToOrganization(
+				user.activeOrganizationId,
+				organizationAccess.ownerId,
+				memberUserIds.map((id) => User.UserId.make(id)),
+			);
 
 			if (memberUserIds.length > 0) {
 				const spaceMembersToInsert = memberUserIds.map((userId) => {

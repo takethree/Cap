@@ -2,9 +2,10 @@
 
 import { db } from "@cap/database";
 import { getCurrentUser } from "@cap/database/auth/session";
-import { sharedVideos } from "@cap/database/schema";
+import { sharedVideos, videos } from "@cap/database/schema";
 import type { Organisation } from "@cap/web-domain";
 import { and, eq, isNull } from "drizzle-orm";
+import { requireOrganizationAccess } from "@/actions/organization/authorization";
 
 export async function getOrganizationVideoIds(
 	organizationId: Organisation.OrganisationId,
@@ -19,15 +20,18 @@ export async function getOrganizationVideoIds(
 		if (!organizationId) {
 			throw new Error("Organization ID is required");
 		}
+		await requireOrganizationAccess(user.id, organizationId);
 
 		const videoIds = await db()
 			.select({
 				videoId: sharedVideos.videoId,
 			})
 			.from(sharedVideos)
+			.innerJoin(videos, eq(sharedVideos.videoId, videos.id))
 			.where(
 				and(
 					eq(sharedVideos.organizationId, organizationId),
+					eq(videos.orgId, organizationId),
 					isNull(sharedVideos.folderId),
 				),
 			);

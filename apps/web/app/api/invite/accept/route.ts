@@ -1,5 +1,6 @@
 import { db } from "@cap/database";
 import { getCurrentUser } from "@cap/database/auth/session";
+import { getSignupOrganizationId } from "@cap/database/auth/signup-organization";
 import { nanoId } from "@cap/database/helpers";
 import {
 	organizationInvites,
@@ -46,6 +47,13 @@ export async function POST(request: NextRequest) {
 
 			if (user.email.toLowerCase() !== invite.invitedEmail.toLowerCase()) {
 				throw new Error("EMAIL_MISMATCH");
+			}
+			const assignedOrganizationId = getSignupOrganizationId(user.email);
+			if (
+				assignedOrganizationId &&
+				assignedOrganizationId !== invite.organizationId
+			) {
+				throw new Error("ORGANIZATION_MISMATCH");
 			}
 
 			const [existingMembership] = await tx
@@ -156,6 +164,12 @@ export async function POST(request: NextRequest) {
 			}
 			if (error.message === "EMAIL_MISMATCH") {
 				return NextResponse.json({ error: "Email mismatch" }, { status: 403 });
+			}
+			if (error.message === "ORGANIZATION_MISMATCH") {
+				return NextResponse.json(
+					{ error: "Invitation conflicts with your assigned organization" },
+					{ status: 403 },
+				);
 			}
 		}
 		console.error("Error accepting invite:", error);

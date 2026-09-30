@@ -15,6 +15,7 @@ import {
 	Database,
 	ImageUploads,
 	resolveEffectiveVideoRules,
+	Spaces,
 } from "@cap/web-backend";
 import type { ImageUpload, Organisation, Space, Video } from "@cap/web-domain";
 import { CurrentUser, Folder } from "@cap/web-domain";
@@ -176,6 +177,19 @@ export const getVideosByFolderId = Effect.fn(function* (
 	if (!folderId) throw new Error("Folder ID is required");
 	const db = yield* Database;
 	const imageUploads = yield* ImageUploads;
+	const currentUser = yield* CurrentUser;
+	const spacesService = yield* Spaces;
+	const scope =
+		root.variant === "user"
+			? null
+			: yield* spacesService.getSpaceOrOrg(
+					root.variant === "space" ? root.spaceId : root.organizationId,
+				);
+	const organizationId = scope
+		? scope.variant === "space"
+			? scope.space.organizationId
+			: scope.organization.id
+		: currentUser.activeOrganizationId;
 
 	const videoData = yield* db.use((db) =>
 		db
@@ -233,14 +247,22 @@ export const getVideosByFolderId = Effect.fn(function* (
 				root.variant === "space"
 					? and(
 							eq(spaceVideos.folderId, folderId),
+							eq(spaceVideos.spaceId, root.spaceId),
+							eq(videos.orgId, organizationId),
 							isNull(organizations.tombstoneAt),
 						)
 					: root.variant === "org"
 						? and(
 								eq(sharedVideos.folderId, folderId),
+								eq(sharedVideos.organizationId, root.organizationId),
+								eq(videos.orgId, organizationId),
 								isNull(organizations.tombstoneAt),
 							)
-						: eq(videos.folderId, folderId),
+						: and(
+								eq(videos.folderId, folderId),
+								eq(videos.ownerId, currentUser.id),
+								eq(videos.orgId, organizationId),
+							),
 			)
 			.groupBy(
 				videos.id,
