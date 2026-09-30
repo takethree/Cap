@@ -112,11 +112,35 @@ const userRow = {
 };
 
 describe("Take Three signup organization membership", () => {
+	it("rejects any conflicting invite even if the first invite matches", async () => {
+		process.env.CAP_SIGNUP_DOMAIN_ORGANIZATION_MAP =
+			'{"customer.example":"customer-org"}';
+		const { db, conditions } = createMockDb([
+			[{ id: "matching", organizationId: "customer-org" }],
+			[{ id: "foreign" }],
+		]);
+		await expect(
+			DrizzleAdapter(db).createUser?.({
+				email: "new@customer.example",
+				emailVerified: null,
+				name: "User",
+				image: null,
+			}),
+		).rejects.toThrow("Pending invitation conflicts");
+		const query = new MySqlDialect().sqlToQuery(conditions[1] as SQL);
+		expect(query.sql).toContain("`organization_invites`.`organizationId` <> ?");
+		expect(query.params).toEqual([
+			"new@customer.example",
+			"pending",
+			"customer-org",
+		]);
+	});
 	it("leaves mapped same-organization invitations to assign their requested role", async () => {
 		process.env.CAP_SIGNUP_DOMAIN_ORGANIZATION_MAP =
 			'{"customer.example":"customer-org"}';
 		const { db, operations } = createMockDb([
 			[{ id: "invite-1", organizationId: "customer-org", role: "admin" }],
+			[],
 			[userRow],
 		]);
 		await DrizzleAdapter(db).createUser?.({

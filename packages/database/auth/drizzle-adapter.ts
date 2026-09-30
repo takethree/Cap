@@ -1,6 +1,6 @@
 import { STRIPE_AVAILABLE, stripe } from "@cap/utils";
 import { type ImageUpload, Organisation, User } from "@cap/web-domain";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, ne } from "drizzle-orm";
 import type { MySql2Database } from "drizzle-orm/mysql2";
 import type {
 	Adapter,
@@ -70,7 +70,24 @@ export function DrizzleAdapter(db: MySql2Database): Adapter {
 						"Pending invitation conflicts with the configured signup organization",
 					);
 				}
-				if (pendingInvite) return;
+				if (pendingInvite && mappedOrganizationId) {
+					const [conflictingInvite] = await tx
+						.select({ id: organizationInvites.id })
+						.from(organizationInvites)
+						.where(
+							and(
+								eq(organizationInvites.invitedEmail, normalizedEmail),
+								eq(organizationInvites.status, "pending"),
+								ne(organizationInvites.organizationId, mappedOrganizationId),
+							),
+						)
+						.limit(1);
+					if (conflictingInvite)
+						throw new Error(
+							"Pending invitation conflicts with the configured signup organization",
+						);
+					return;
+				}
 
 				const defaultSignupOrganizationId =
 					mappedOrganizationId ?? getDefaultSignupOrganizationId();

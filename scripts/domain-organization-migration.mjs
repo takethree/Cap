@@ -31,6 +31,7 @@ export async function migrateDomainOrganization(connection, options) {
 	await connection.query(
 		apply ? "START TRANSACTION" : "START TRANSACTION READ ONLY",
 	);
+	let rollbackAttempted = false;
 	try {
 		const organizations = await rows(
 			`SELECT id, name, ownerId, settings, allowedEmailDomain, tombstoneAt FROM organizations WHERE id IN (?, ?) ORDER BY id${lock}`,
@@ -181,10 +182,13 @@ export async function migrateDomainOrganization(connection, options) {
 					[targetOrganizationId, shareId, sourceOrganizationId],
 				);
 			await connection.commit();
-		} else await connection.rollback();
+		} else {
+			rollbackAttempted = true;
+			await connection.rollback();
+		}
 		return plan;
 	} catch (error) {
-		await connection.rollback();
+		if (!rollbackAttempted) await connection.rollback().catch(() => {});
 		throw error;
 	}
 }

@@ -134,3 +134,30 @@ test("failed mutation rolls back the transaction", async () => {
 	assert.equal(db.transactions.at(-1), "ROLLBACK");
 	assert.ok(!db.transactions.includes("COMMIT"));
 });
+test("rollback failure preserves the original apply error", async () => {
+	const db = connection();
+	db.rollback = async () => {
+		throw new Error("connection lost");
+	};
+	await assert.rejects(
+		migrateDomainOrganization(db, {
+			...options,
+			apply: true,
+			expectedPlanHash: "stale",
+		}),
+		/fingerprint/,
+	);
+});
+test("failed dry-run rollback is not retried", async () => {
+	const db = connection();
+	let attempts = 0;
+	db.rollback = async () => {
+		attempts++;
+		throw new Error("connection lost");
+	};
+	await assert.rejects(
+		migrateDomainOrganization(db, options),
+		/connection lost/,
+	);
+	assert.equal(attempts, 1);
+});
