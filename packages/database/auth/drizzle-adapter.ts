@@ -16,9 +16,12 @@ import {
 	organizationMembers,
 	organizations,
 	sessions,
+	spaceMembers,
+	spaces,
 	users,
 	verificationTokens,
 } from "../schema.ts";
+import { getSignupSpaceId } from "./signup-space.ts";
 
 export const getDefaultSignupOrganizationId = () => {
 	const value = process.env.CAP_DEFAULT_SIGNUP_ORGANIZATION_ID?.trim();
@@ -56,6 +59,12 @@ export function DrizzleAdapter(db: MySql2Database): Adapter {
 				}
 
 				const defaultSignupOrganizationId = getDefaultSignupOrganizationId();
+				const signupSpaceId = getSignupSpaceId(normalizedEmail);
+				if (signupSpaceId && !defaultSignupOrganizationId) {
+					throw new Error(
+						"Signup space assignment requires a default organization",
+					);
+				}
 				if (defaultSignupOrganizationId) {
 					const [defaultSignupOrganization] = await tx
 						.select({ id: organizations.id })
@@ -69,6 +78,31 @@ export function DrizzleAdapter(db: MySql2Database): Adapter {
 						.limit(1);
 
 					if (defaultSignupOrganization) {
+						if (signupSpaceId) {
+							const [signupSpace] = await tx
+								.select({ id: spaces.id })
+								.from(spaces)
+								.where(
+									and(
+										eq(spaces.id, signupSpaceId),
+										eq(spaces.organizationId, defaultSignupOrganization.id),
+										eq(spaces.privacy, "Private"),
+										eq(spaces.public, false),
+									),
+								)
+								.limit(1);
+							if (!signupSpace) {
+								throw new Error(
+									"Configured signup space must be private and belong to the default organization",
+								);
+							}
+							await tx.insert(spaceMembers).values({
+								id: nanoId(),
+								spaceId: signupSpace.id,
+								userId,
+								role: "member",
+							});
+						}
 						await tx.insert(organizationMembers).values({
 							id: nanoId(),
 							organizationId: defaultSignupOrganization.id,
@@ -90,6 +124,9 @@ export function DrizzleAdapter(db: MySql2Database): Adapter {
 							.where(eq(users.id, userId));
 
 						return;
+					}
+					if (signupSpaceId) {
+						throw new Error("Configured signup organization was not found");
 					}
 				}
 

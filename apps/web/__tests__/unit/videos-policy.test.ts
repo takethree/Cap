@@ -131,6 +131,44 @@ function makeUser(
 const noUser = Option.none<CurrentUser["Type"]>();
 
 describe("VideosPolicy.canView", () => {
+	it.each([
+		{
+			public: false,
+			orgMembership: false,
+			spaceMembership: false,
+			expected: "denied",
+		},
+		{
+			public: false,
+			orgMembership: false,
+			spaceMembership: true,
+			expected: "allowed",
+		},
+		{
+			public: false,
+			orgMembership: true,
+			spaceMembership: false,
+			expected: "allowed",
+		},
+		{
+			public: true,
+			orgMembership: false,
+			spaceMembership: false,
+			expected: "allowed",
+		},
+	])(
+		"characterizes same-organization space isolation limits: %j",
+		async ({ public: isPublic, orgMembership, spaceMembership, expected }) => {
+			const deps = makeDeps({
+				video: makeVideo({ public: isPublic }),
+				orgMembership,
+				spaceMembership,
+			});
+			expect(await runCanView(deps, makeUser("member@customer.example"))).toBe(
+				expected,
+			);
+		},
+	);
 	describe("owner access", () => {
 		it("allows the video owner regardless of restrictions", async () => {
 			const deps = makeDeps({
