@@ -292,7 +292,11 @@ export default async function SharedCapsPage(props: {
 					.from(spaceVideos)
 					.innerJoin(videos, eq(spaceVideos.videoId, videos.id))
 					.where(
-						and(eq(spaceVideos.spaceId, spaceId), eq(videos.orgId, space.organizationId), isNull(spaceVideos.folderId)),
+						and(
+							eq(spaceVideos.spaceId, spaceId),
+							eq(videos.orgId, space.organizationId),
+							isNull(spaceVideos.folderId),
+						),
 					),
 			]);
 			return {
