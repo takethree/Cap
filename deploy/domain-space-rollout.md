@@ -1,5 +1,7 @@
 # Domain signup spaces (LM-16549)
 
+For the revised requirement of separate native organizations, use `domain-organization-rollout.md` instead. Do not enable this space-routing approach for that rollout.
+
 This change adds an opt-in domain-to-space assignment under the existing default signup organization. It does not establish an isolation boundary for organization-wide content. Do not enable routing or execute the migration until the access decisions below are approved and verified. No production identifiers or customer membership details belong in this public repository.
 
 ## Configuration

@@ -19,6 +19,7 @@ import { revalidatePath } from "next/cache";
 import { isOrganizationOwnerPro } from "@/lib/org-pro";
 import { normalizeSpaceRole } from "@/lib/permissions/roles";
 import { runPromise } from "@/lib/server";
+import { assertUsersBelongToOrganization } from "./authorization";
 import { getSpaceAccess } from "./space-authorization";
 import {
 	getSpaceSettingsFromFormData,
@@ -66,6 +67,11 @@ export async function updateSpace(formData: FormData) {
 	if (!access?.canManage) {
 		return { success: false, error: "Unauthorized" };
 	}
+	await assertUsersBelongToOrganization(
+		space.organizationId,
+		access.organizationOwnerId,
+		[...members, space.createdById],
+	);
 
 	// Publishing is gated on the org owner's plan, but a downgraded org can
 	// always un-publish — so only the false→true transition requires Pro.

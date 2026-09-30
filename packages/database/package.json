@@ -60,6 +60,7 @@
 		".": "./index.ts",
 		"./auth/auth-options": "./auth/auth-options.ts",
 		"./auth/session": "./auth/session.ts",
+		"./auth/signup-organization": "./auth/signup-organization.ts",
 		"./schema": "./schema.ts",
 		"./crypto": "./crypto.ts",
 		"./helpers": "./helpers.ts",
@@ -73,6 +74,7 @@
 			".": "./dist/index.js",
 			"./auth/auth-options": "./dist/auth/auth-options.js",
 			"./auth/session": "./dist/auth/session.js",
+			"./auth/signup-organization": "./dist/auth/signup-organization.js",
 			"./schema": "./dist/schema.js",
 			"./crypto": "./dist/crypto.js",
 			"./helpers": "./dist/helpers.js"

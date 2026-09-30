@@ -1,7 +1,7 @@
 import { db } from "@cap/database";
 import { organizationMembers, organizations } from "@cap/database/schema";
 import type { Organisation, User } from "@cap/web-domain";
-import { and, eq, isNull, or } from "drizzle-orm";
+import { and, eq, inArray, isNull, or } from "drizzle-orm";
 import {
 	canManageOrganizationBilling,
 	canManageOrganizationProSeats,
@@ -17,6 +17,30 @@ export type OrganizationAccess = {
 	memberId: string | null;
 	role: OrganizationRole;
 };
+
+export async function assertUsersBelongToOrganization(
+	organizationId: Organisation.OrganisationId,
+	organizationOwnerId: User.UserId,
+	userIds: User.UserId[],
+) {
+	const uniqueUserIds = [...new Set(userIds)];
+	if (!uniqueUserIds.length) return;
+	const members = await db()
+		.select({ userId: organizationMembers.userId })
+		.from(organizationMembers)
+		.where(
+			and(
+				eq(organizationMembers.organizationId, organizationId),
+				inArray(organizationMembers.userId, uniqueUserIds),
+			),
+		);
+	const allowedIds = new Set([
+		organizationOwnerId,
+		...members.map((member) => member.userId),
+	]);
+	if (uniqueUserIds.some((id) => !allowedIds.has(id)))
+		throw new Error("All space members must belong to the organization");
+}
 
 export async function getOrganizationAccess(
 	userId: User.UserId,

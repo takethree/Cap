@@ -21,6 +21,7 @@ import {
 	users,
 	verificationTokens,
 } from "../schema.ts";
+import { getSignupOrganizationId } from "./signup-organization.ts";
 import { getSignupSpaceId } from "./signup-space.ts";
 
 export const getDefaultSignupOrganizationId = () => {
@@ -33,9 +34,13 @@ export function DrizzleAdapter(db: MySql2Database): Adapter {
 		async createUser(userData: Omit<AdapterUser, "id">) {
 			const normalizedEmail = (userData.email as string)?.toLowerCase() ?? "";
 			const userId = User.UserId.make(nanoId());
+			const mappedOrganizationId = getSignupOrganizationId(normalizedEmail);
 			await db.transaction(async (tx) => {
 				const [pendingInvite] = await tx
-					.select({ id: organizationInvites.id })
+					.select({
+						id: organizationInvites.id,
+						organizationId: organizationInvites.organizationId,
+					})
 					.from(organizationInvites)
 					.where(
 						and(
@@ -54,12 +59,26 @@ export function DrizzleAdapter(db: MySql2Database): Adapter {
 					activeOrganizationId: Organisation.OrganisationId.make(""),
 				});
 
-				if (pendingInvite) {
+				if (pendingInvite && !mappedOrganizationId) {
 					return;
 				}
+				if (
+					pendingInvite &&
+					pendingInvite.organizationId !== mappedOrganizationId
+				) {
+					throw new Error(
+						"Pending invitation conflicts with the configured signup organization",
+					);
+				}
 
-				const defaultSignupOrganizationId = getDefaultSignupOrganizationId();
+				const defaultSignupOrganizationId =
+					mappedOrganizationId ?? getDefaultSignupOrganizationId();
 				const signupSpaceId = getSignupSpaceId(normalizedEmail);
+				if (mappedOrganizationId && signupSpaceId) {
+					throw new Error(
+						"Configure organization routing or space routing for a domain, not both",
+					);
+				}
 				if (signupSpaceId && !defaultSignupOrganizationId) {
 					throw new Error(
 						"Signup space assignment requires a default organization",
@@ -125,7 +144,7 @@ export function DrizzleAdapter(db: MySql2Database): Adapter {
 
 						return;
 					}
-					if (signupSpaceId) {
+					if (signupSpaceId || mappedOrganizationId) {
 						throw new Error("Configured signup organization was not found");
 					}
 				}

@@ -35,8 +35,12 @@ type Operation =
 const originalDefaultSignupOrganizationId =
 	process.env.CAP_DEFAULT_SIGNUP_ORGANIZATION_ID;
 const originalSpaceMap = process.env.CAP_SIGNUP_DOMAIN_SPACE_MAP;
+const originalOrganizationMap = process.env.CAP_SIGNUP_DOMAIN_ORGANIZATION_MAP;
 
 afterEach(() => {
+	if (originalOrganizationMap === undefined)
+		delete process.env.CAP_SIGNUP_DOMAIN_ORGANIZATION_MAP;
+	else process.env.CAP_SIGNUP_DOMAIN_ORGANIZATION_MAP = originalOrganizationMap;
 	if (originalSpaceMap === undefined)
 		delete process.env.CAP_SIGNUP_DOMAIN_SPACE_MAP;
 	else process.env.CAP_SIGNUP_DOMAIN_SPACE_MAP = originalSpaceMap;
@@ -108,6 +112,88 @@ const userRow = {
 };
 
 describe("Take Three signup organization membership", () => {
+	it("routes a mapped domain to its native organization without joining the default organization", async () => {
+		process.env.CAP_DEFAULT_SIGNUP_ORGANIZATION_ID = "internal-org";
+		process.env.CAP_SIGNUP_DOMAIN_ORGANIZATION_MAP =
+			'{"customer.example":"customer-org"}';
+		const { db, operations } = createMockDb([
+			[],
+			[{ id: "customer-org" }],
+			[userRow],
+		]);
+		await DrizzleAdapter(db).createUser?.({
+			email: "User@Customer.Example",
+			emailVerified: null,
+			name: "User",
+			image: null,
+		});
+		expect(
+			operations.find((op) => op.table === "organization_members")?.values,
+		).toMatchObject({ organizationId: "customer-org", role: "member" });
+		expect(
+			operations.find((op) => op.table === "users" && op.kind === "update")
+				?.values,
+		).toMatchObject({
+			activeOrganizationId: "customer-org",
+			defaultOrgId: "customer-org",
+		});
+		expect(
+			operations.some(
+				(op) => op.table === "organizations" || op.table === "space_members",
+			),
+		).toBe(false);
+	});
+	it("preserves internal-domain signup when customer organization routing is enabled", async () => {
+		process.env.CAP_DEFAULT_SIGNUP_ORGANIZATION_ID = "internal-org";
+		process.env.CAP_SIGNUP_DOMAIN_ORGANIZATION_MAP =
+			'{"customer.example":"customer-org"}';
+		const { db, operations } = createMockDb([
+			[],
+			[{ id: "internal-org" }],
+			[userRow],
+		]);
+		await DrizzleAdapter(db).createUser?.({
+			email: "new@take3tech.com",
+			emailVerified: null,
+			name: "User",
+			image: null,
+		});
+		expect(
+			operations.find((op) => op.table === "organization_members")?.values,
+		).toMatchObject({ organizationId: "internal-org", role: "member" });
+	});
+	it("rejects a mapped-domain invitation to a different organization", async () => {
+		process.env.CAP_SIGNUP_DOMAIN_ORGANIZATION_MAP =
+			'{"customer.example":"customer-org"}';
+		const { db, operations } = createMockDb([
+			[{ id: "invite-1", organizationId: "internal-org" }],
+		]);
+		await expect(
+			DrizzleAdapter(db).createUser?.({
+				email: "new@customer.example",
+				emailVerified: null,
+				name: "User",
+				image: null,
+			}),
+		).rejects.toThrow("Pending invitation conflicts");
+		expect(operations.some((op) => op.table === "organization_members")).toBe(
+			false,
+		);
+	});
+	it("fails closed for a missing native destination without creating another organization", async () => {
+		process.env.CAP_SIGNUP_DOMAIN_ORGANIZATION_MAP =
+			'{"customer.example":"customer-org"}';
+		const { db, operations } = createMockDb([[], []]);
+		await expect(
+			DrizzleAdapter(db).createUser?.({
+				email: "new@customer.example",
+				emailVerified: null,
+				name: "User",
+				image: null,
+			}),
+		).rejects.toThrow("Configured signup organization");
+		expect(operations.some((op) => op.table === "organizations")).toBe(false);
+	});
 	it("assigns a matching domain to an existing private space as an ordinary member", async () => {
 		process.env.CAP_DEFAULT_SIGNUP_ORGANIZATION_ID = "org-1";
 		process.env.CAP_SIGNUP_DOMAIN_SPACE_MAP = '{"customer.example":"space-1"}';
