@@ -19,7 +19,10 @@ import { revalidatePath } from "next/cache";
 import { isOrganizationOwnerPro } from "@/lib/org-pro";
 import { normalizeSpaceRole } from "@/lib/permissions/roles";
 import { runPromise } from "@/lib/server";
-import { assertUsersBelongToOrganization } from "./authorization";
+import {
+	assertUsersBelongToOrganization,
+	getOrganizationAccess,
+} from "./authorization";
 import { getSpaceAccess } from "./space-authorization";
 import {
 	getSpaceSettingsFromFormData,
@@ -67,10 +70,21 @@ export async function updateSpace(formData: FormData) {
 	if (!access?.canManage) {
 		return { success: false, error: "Unauthorized" };
 	}
+	const creatorAccess = await getOrganizationAccess(
+		space.createdById,
+		space.organizationId,
+	);
+	const memberIds = Array.from(
+		new Set(
+			creatorAccess
+				? [...members, space.createdById]
+				: members.filter((id) => id !== space.createdById),
+		),
+	);
 	await assertUsersBelongToOrganization(
 		space.organizationId,
 		access.organizationOwnerId,
-		[...members, space.createdById],
+		memberIds,
 	);
 
 	// Publishing is gated on the org owner's plan, but a downgraded org can
@@ -125,7 +139,6 @@ export async function updateSpace(formData: FormData) {
 
 	await db().update(spaces).set(spaceUpdate).where(eq(spaces.id, id));
 
-	const memberIds = Array.from(new Set([...members, space.createdById]));
 	const existingMembers = await db()
 		.select({ userId: spaceMembers.userId, role: spaceMembers.role })
 		.from(spaceMembers)
@@ -138,22 +151,23 @@ export async function updateSpace(formData: FormData) {
 	);
 
 	await db().delete(spaceMembers).where(eq(spaceMembers.spaceId, id));
-	await db()
-		.insert(spaceMembers)
-		.values(
-			memberIds.map((userId) => {
-				const role: SpaceMemberRole =
-					userId === space.createdById
-						? "admin"
-						: (existingRoleByUserId.get(userId) ?? "member");
-				return {
-					id: SpaceMemberId.make(nanoId()),
-					spaceId: id,
-					userId,
-					role,
-				};
-			}),
-		);
+	if (memberIds.length)
+		await db()
+			.insert(spaceMembers)
+			.values(
+				memberIds.map((userId) => {
+					const role: SpaceMemberRole =
+						userId === space.createdById
+							? "admin"
+							: (existingRoleByUserId.get(userId) ?? "member");
+					return {
+						id: SpaceMemberId.make(nanoId()),
+						spaceId: id,
+						userId,
+						role,
+					};
+				}),
+			);
 
 	if (formData.get("removeIcon") === "true") {
 		const spaceArr = await db().select().from(spaces).where(eq(spaces.id, id));

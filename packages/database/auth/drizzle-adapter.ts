@@ -70,6 +70,7 @@ export function DrizzleAdapter(db: MySql2Database): Adapter {
 						"Pending invitation conflicts with the configured signup organization",
 					);
 				}
+				if (pendingInvite) return;
 
 				const defaultSignupOrganizationId =
 					mappedOrganizationId ?? getDefaultSignupOrganizationId();

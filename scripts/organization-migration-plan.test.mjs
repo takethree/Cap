@@ -89,3 +89,11 @@ test("a changed public flag changes the reviewed fingerprint", () => {
 	data.assets[0].public = 0;
 	assert.notEqual(planOrganizationMigration(data, options).fingerprint, before);
 });
+test("blocks domain accounts outside both reviewed organizations", () => {
+	const data = snapshot();
+	data.users[1].sourceRole = null;
+	const plan = planOrganizationMigration(data, options);
+	assert.ok(
+		plan.blockers.some((blocker) => blocker.includes("outside the approved")),
+	);
+});

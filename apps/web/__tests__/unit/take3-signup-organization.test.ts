@@ -112,6 +112,24 @@ const userRow = {
 };
 
 describe("Take Three signup organization membership", () => {
+	it("leaves mapped same-organization invitations to assign their requested role", async () => {
+		process.env.CAP_SIGNUP_DOMAIN_ORGANIZATION_MAP =
+			'{"customer.example":"customer-org"}';
+		const { db, operations } = createMockDb([
+			[{ id: "invite-1", organizationId: "customer-org", role: "admin" }],
+			[userRow],
+		]);
+		await DrizzleAdapter(db).createUser?.({
+			email: "admin@customer.example",
+			emailVerified: null,
+			name: "Admin",
+			image: null,
+		});
+		expect(operations.some((op) => op.table === "organization_members")).toBe(
+			false,
+		);
+		expect(operations.some((op) => op.table === "organizations")).toBe(false);
+	});
 	it("routes a mapped domain to its native organization without joining the default organization", async () => {
 		process.env.CAP_DEFAULT_SIGNUP_ORGANIZATION_ID = "internal-org";
 		process.env.CAP_SIGNUP_DOMAIN_ORGANIZATION_MAP =

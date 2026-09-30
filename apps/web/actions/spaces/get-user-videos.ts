@@ -15,6 +15,8 @@ import {
 } from "@cap/database/schema";
 import type { Space } from "@cap/web-domain";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { requireOrganizationAccess } from "@/actions/organization/authorization";
+import { getSpaceAccess } from "@/actions/organization/space-authorization";
 
 export async function getUserVideos(spaceId: Space.SpaceIdOrOrganisationId) {
 	try {
@@ -26,6 +28,16 @@ export async function getUserVideos(spaceId: Space.SpaceIdOrOrganisationId) {
 
 		const userId = user.id;
 		const isAllSpacesEntry = user.activeOrganizationId === spaceId;
+		const access = isAllSpacesEntry
+			? null
+			: await getSpaceAccess(user.id, spaceId);
+		if (
+			!isAllSpacesEntry &&
+			(!access || (!access.spaceRole && !access.canManage))
+		)
+			throw new Error("Forbidden");
+		const organizationId = access?.organizationId ?? user.activeOrganizationId;
+		await requireOrganizationAccess(user.id, organizationId);
 
 		const selectFields = {
 			id: videos.id,
@@ -62,7 +74,11 @@ export async function getUserVideos(spaceId: Space.SpaceIdOrOrganisationId) {
 					.leftJoin(spaces, eq(folders.spaceId, spaces.id))
 					.leftJoin(organizations, eq(videos.orgId, organizations.id))
 					.where(
-						and(eq(videos.ownerId, userId), isNull(organizations.tombstoneAt)),
+						and(
+							eq(videos.ownerId, userId),
+							eq(videos.orgId, organizationId),
+							isNull(organizations.tombstoneAt),
+						),
 					)
 					.groupBy(
 						videos.id,
@@ -94,7 +110,11 @@ export async function getUserVideos(spaceId: Space.SpaceIdOrOrganisationId) {
 					.leftJoin(spaces, eq(folders.spaceId, spaces.id))
 					.leftJoin(organizations, eq(videos.orgId, organizations.id))
 					.where(
-						and(eq(videos.ownerId, userId), isNull(organizations.tombstoneAt)),
+						and(
+							eq(videos.ownerId, userId),
+							eq(videos.orgId, organizationId),
+							isNull(organizations.tombstoneAt),
+						),
 					)
 					.groupBy(
 						videos.id,

@@ -18,6 +18,10 @@ export function planOrganizationMigration(snapshot, options) {
 		throw new Error("Distinct source and target organizations are required");
 	const blockers = [];
 	const matchedIds = snapshot.users.map((user) => user.id).sort();
+	if (snapshot.users.some((user) => !user.sourceRole && !user.targetRole))
+		blockers.push(
+			"Domain accounts outside the approved source and target require a separate plan",
+		);
 	const equalIds = (actual, expected) =>
 		Array.isArray(expected) &&
 		JSON.stringify([...new Set(expected)].sort()) ===

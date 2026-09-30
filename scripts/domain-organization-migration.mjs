@@ -49,7 +49,7 @@ export async function migrateDomainOrganization(connection, options) {
 		if (collisions.length)
 			throw new Error("Ambiguous target organization name");
 		const users = await rows(
-			`SELECT u.id, u.email, u.activeOrganizationId, u.defaultOrgId, u.customBucket, sm.role sourceRole, tm.role targetRole FROM users u LEFT JOIN organization_members sm ON sm.userId = u.id AND sm.organizationId = ? LEFT JOIN organization_members tm ON tm.userId = u.id AND tm.organizationId = ? WHERE LOWER(SUBSTRING_INDEX(u.email, '@', -1)) = ? AND (sm.id IS NOT NULL OR tm.id IS NOT NULL) ORDER BY u.id${lock}`,
+			`SELECT u.id, u.email, u.activeOrganizationId, u.defaultOrgId, u.customBucket, sm.role sourceRole, tm.role targetRole FROM users u LEFT JOIN organization_members sm ON sm.userId = u.id AND sm.organizationId = ? LEFT JOIN organization_members tm ON tm.userId = u.id AND tm.organizationId = ? WHERE LOWER(SUBSTRING_INDEX(u.email, '@', -1)) = ? ORDER BY u.id${lock}`,
 			[sourceOrganizationId, targetOrganizationId, domain],
 		);
 		if (new Set(users.map((user) => user.id)).size !== users.length)
