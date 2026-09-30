@@ -95,6 +95,12 @@ function createServerEnv() {
 				.describe(
 					"Existing organization id that new non-invite signups should join",
 				),
+			CAP_SIGNUP_DOMAIN_SPACE_MAP: z
+				.string()
+				.optional()
+				.describe(
+					"JSON object mapping exact signup email domains to existing private space ids",
+				),
 
 			/// AI providers
 			AI_GATEWAY_BASE_URL: z
