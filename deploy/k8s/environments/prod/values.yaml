@@ -16,7 +16,7 @@ web:
 mediaServer:
   image:
     repository: 159207264407.dkr.ecr.us-east-2.amazonaws.com/cap-media-server
-    tag: sha-dae1b74b46ef973721201ef8c9ea138dbd2409af
+    tag: sha-2dce2f51924b87d503b207d497ea7014266926c5
     pullPolicy: IfNotPresent
 serviceAccount:
   name: cap-web
