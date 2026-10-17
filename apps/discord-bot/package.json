@@ -12,13 +12,13 @@
 		"@cloudflare/vitest-pool-workers": "^0.6.4",
 		"@cloudflare/workers-types": "^4.20250214.0",
 		"typescript": "^5.8.3",
-		"vitest": "~2.1.9",
+		"vitest": "~3.2.6",
 		"wrangler": "^3.109.1"
 	},
 	"dependencies": {
 		"@hono/valibot-validator": "^0.5.2",
 		"buffer": "^6.0.3",
-		"hono": "^4.7.1",
+		"hono": "^4.12.25",
 		"jose": "^5.10.0",
 		"octokit": "^4.1.2",
 		"tweetnacl": "^1.0.3",
