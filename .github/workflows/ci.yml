@@ -239,7 +239,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 20
+          node-version: '24.22.1'
 
       - name: Run verify
         shell: bash
@@ -277,7 +277,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 24
+          node-version: '24.22.1'
 
       - run: node scripts/setup.js
 
