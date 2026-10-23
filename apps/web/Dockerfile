@@ -1,6 +1,6 @@
 # syntax=docker.io/docker/dockerfile:1
 
-FROM node:24-alpine AS base
+FROM node:24.22.1-alpine AS base
 RUN corepack enable
 RUN mkdir -p /usr/local/share/ca-certificates && wget -q -O /usr/local/share/ca-certificates/aws-rds-global-bundle.pem https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
 ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/aws-rds-global-bundle.pem
