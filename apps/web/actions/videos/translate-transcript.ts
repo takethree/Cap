@@ -2,18 +2,11 @@
 
 import { db } from "@cap/database";
 import { videos } from "@cap/database/schema";
-import { serverEnv } from "@cap/env";
 import { Storage } from "@cap/web-backend";
 import type { Video } from "@cap/web-domain";
 import { eq } from "drizzle-orm";
 import { Effect, Option } from "effect";
-import {
-	callAiGatewayChat,
-	isAiGatewayConfigured,
-	isAiProviderConfigured,
-	isLegacyDirectAiEnabled,
-} from "@/lib/ai-gateway-client";
-import { GROQ_MODEL, getGroqClient } from "@/lib/groq-client";
+import { callAiGatewayChat, isAiProviderConfigured } from "@/lib/ai-gateway-client";
 import { runPromise } from "@/lib/server";
 import { decodeStorageVideo } from "@/lib/video-storage";
 import {
@@ -161,58 +154,9 @@ ${vttContent}`;
 }
 
 async function callTranslationProvider(prompt: string): Promise<string | null> {
-	if (isAiGatewayConfigured()) {
-		return callAiGatewayChat({
-			messages: [{ role: "user", content: prompt }],
-			temperature: 0.3,
-			maxTokens: 8000,
-		});
-	}
-
-	if (!isLegacyDirectAiEnabled()) {
-		return null;
-	}
-
-	const groq = getGroqClient();
-	if (groq) {
-		try {
-			const response = await groq.chat.completions.create({
-				model: GROQ_MODEL,
-				messages: [{ role: "user", content: prompt }],
-				temperature: 0.3,
-				max_tokens: 8000,
-			});
-			return response.choices[0]?.message?.content ?? null;
-		} catch (error) {
-			if (!serverEnv().OPENAI_API_KEY) {
-				throw error;
-			}
-		}
-	}
-
-	if (!serverEnv().OPENAI_API_KEY) {
-		return null;
-	}
-
-	const response = await fetch("https://api.openai.com/v1/chat/completions", {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-			Authorization: `Bearer ${serverEnv().OPENAI_API_KEY}`,
-		},
-		body: JSON.stringify({
-			model: "gpt-4o-mini",
-			messages: [{ role: "user", content: prompt }],
-			temperature: 0.3,
-			max_tokens: 8000,
-		}),
+	return callAiGatewayChat({
+		messages: [{ role: "user", content: prompt }],
+		temperature: 0.3,
+		maxTokens: 8000,
 	});
-
-	if (!response.ok) {
-		const errorText = await response.text();
-		throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
-	}
-
-	const payload = await response.json();
-	return payload.choices?.[0]?.message?.content ?? null;
 }

@@ -207,7 +207,7 @@ SELF-HOSTING:
 - Docs at https://cap.so/self-hosting
 - Desktop app can point to a self-hosted server via Settings > General > Self Host
 - Required: WEB_URL, DATABASE_ENCRYPTION_KEY, NEXTAUTH_SECRET, MYSQL_PASSWORD, S3 configuration
-- Optional: email sending (Resend), AI features (Deepgram, Groq/OpenAI), Google OAuth, SSO
+- Optional: email sending (Resend), transcription (Deepgram), AI summaries and chat (LiteLLM gateway), Google OAuth, SSO
 
 REFERRAL PROGRAM:
 - Earn rewards by referring others to Cap
