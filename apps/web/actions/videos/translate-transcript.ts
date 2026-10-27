@@ -6,7 +6,10 @@ import { Storage } from "@cap/web-backend";
 import type { Video } from "@cap/web-domain";
 import { eq } from "drizzle-orm";
 import { Effect, Option } from "effect";
-import { callAiGatewayChat, isAiProviderConfigured } from "@/lib/ai-gateway-client";
+import {
+	callAiGatewayChat,
+	isAiProviderConfigured,
+} from "@/lib/ai-gateway-client";
 import { runPromise } from "@/lib/server";
 import { decodeStorageVideo } from "@/lib/video-storage";
 import {

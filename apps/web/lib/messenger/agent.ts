@@ -1,7 +1,10 @@
 import "server-only";
 
 import type { MessengerMessageRole } from "@cap/database/schema";
-import { callAiGatewayChat, isAiGatewayConfigured } from "@/lib/ai-gateway-client";
+import {
+	callAiGatewayChat,
+	isAiGatewayConfigured,
+} from "@/lib/ai-gateway-client";
 import { CAP_REFERENCE_GUIDE, MESSENGER_AGENT_PROMPT } from "./constants";
 import { getKnowledgeTag, searchSupermemory } from "./supermemory";
 

@@ -12,7 +12,10 @@ import {
 import { and, eq } from "drizzle-orm";
 import { Effect, Option } from "effect";
 import { FatalError } from "workflow";
-import { callAiGatewayChat, isAiProviderConfigured } from "@/lib/ai-gateway-client";
+import {
+	callAiGatewayChat,
+	isAiProviderConfigured,
+} from "@/lib/ai-gateway-client";
 import { runPromise } from "@/lib/server";
 import { decodeStorageVideo } from "@/lib/video-storage";
 
