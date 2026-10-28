@@ -1,13 +1,10 @@
 import "server-only";
 
 import type { MessengerMessageRole } from "@cap/database/schema";
-import { serverEnv } from "@cap/env";
 import {
 	callAiGatewayChat,
 	isAiGatewayConfigured,
-	isLegacyDirectAiEnabled,
 } from "@/lib/ai-gateway-client";
-import { GROQ_MODEL, getGroqClient } from "@/lib/groq-client";
 import { CAP_REFERENCE_GUIDE, MESSENGER_AGENT_PROMPT } from "./constants";
 import { getKnowledgeTag, searchSupermemory } from "./supermemory";
 
@@ -66,135 +63,6 @@ const mapHistoryForLlm = (history: ConversationMessage[]) =>
 		content: message.content.slice(0, 6000),
 	}));
 
-const parseAnthropicContent = (payload: unknown) => {
-	if (!payload || typeof payload !== "object") return null;
-	const content = (payload as { content?: unknown }).content;
-	if (!Array.isArray(content)) return null;
-	const text = content
-		.map((block) => {
-			if (!block || typeof block !== "object") return "";
-			const type = (block as { type?: unknown }).type;
-			const value = (block as { text?: unknown }).text;
-			if (type !== "text" || typeof value !== "string") return "";
-			return value;
-		})
-		.join("\n")
-		.trim();
-	return text.length > 0 ? text : null;
-};
-
-const callAnthropic = async ({
-	systemPrompt,
-	history,
-}: {
-	systemPrompt: string;
-	history: ConversationMessage[];
-}) => {
-	const key = serverEnv().ANTHROPIC_API_KEY;
-	if (!key) return null;
-
-	const response = await fetch("https://api.anthropic.com/v1/messages", {
-		method: "POST",
-		headers: {
-			"x-api-key": key,
-			"anthropic-version": "2023-06-01",
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({
-			model: "claude-sonnet-4-6",
-			temperature: 0.65,
-			max_tokens: 500,
-			system: systemPrompt,
-			messages: mapHistoryForLlm(history),
-		}),
-		signal: AbortSignal.timeout(35000),
-	});
-
-	if (!response.ok) {
-		const text = await response.text();
-		throw new Error(`Anthropic chat failed: ${response.status} ${text}`);
-	}
-
-	const payload = await response.json();
-	return parseAnthropicContent(payload);
-};
-
-const parseOpenAiContent = (payload: unknown) => {
-	if (!payload || typeof payload !== "object") return null;
-	const choices = (payload as { choices?: unknown }).choices;
-	if (!Array.isArray(choices) || choices.length === 0) return null;
-	const first = choices[0] as {
-		message?: {
-			content?: unknown;
-		};
-	};
-	const content = first.message?.content;
-	if (typeof content === "string") return content.trim();
-	return null;
-};
-
-const callOpenAi = async ({
-	systemPrompt,
-	history,
-}: {
-	systemPrompt: string;
-	history: ConversationMessage[];
-}) => {
-	const key = serverEnv().OPENAI_API_KEY;
-	if (!key) return null;
-
-	const response = await fetch("https://api.openai.com/v1/chat/completions", {
-		method: "POST",
-		headers: {
-			Authorization: `Bearer ${key}`,
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({
-			model: "gpt-4o-mini",
-			temperature: 0.65,
-			max_tokens: 500,
-			messages: [
-				{ role: "system", content: systemPrompt },
-				...mapHistoryForLlm(history),
-			],
-		}),
-		signal: AbortSignal.timeout(35000),
-	});
-
-	if (!response.ok) {
-		const text = await response.text();
-		throw new Error(`OpenAI chat failed: ${response.status} ${text}`);
-	}
-
-	const payload = await response.json();
-	return parseOpenAiContent(payload);
-};
-
-const callGroq = async ({
-	systemPrompt,
-	history,
-}: {
-	systemPrompt: string;
-	history: ConversationMessage[];
-}) => {
-	const client = getGroqClient();
-	if (!client) return null;
-
-	const completion = await client.chat.completions.create({
-		model: GROQ_MODEL,
-		temperature: 0.65,
-		max_tokens: 500,
-		messages: [
-			{ role: "system", content: systemPrompt },
-			...mapHistoryForLlm(history),
-		],
-	});
-
-	const content = completion.choices[0]?.message?.content;
-	if (!content) return null;
-	return content.trim();
-};
-
 const callAiGateway = async ({
 	systemPrompt,
 	history,
@@ -246,23 +114,6 @@ export const generateMessengerAgentReply = async ({
 		() => null,
 	);
 	if (fromGateway) return fromGateway;
-
-	if (!isLegacyDirectAiEnabled()) {
-		return "Oh no, I'm so sorry about this! I'm having a little technical hiccup on my end. Someone from the team will jump in here shortly to help you out though!";
-	}
-
-	const fromAnthropic = await callAnthropic({ systemPrompt, history }).catch(
-		() => null,
-	);
-	if (fromAnthropic) return fromAnthropic;
-
-	const fromOpenAi = await callOpenAi({ systemPrompt, history }).catch(
-		() => null,
-	);
-	if (fromOpenAi) return fromOpenAi;
-
-	const fromGroq = await callGroq({ systemPrompt, history }).catch(() => null);
-	if (fromGroq) return fromGroq;
 
 	return "Oh no, I'm so sorry about this! I'm having a little technical hiccup on my end. Someone from the team will jump in here shortly to help you out though!";
 };

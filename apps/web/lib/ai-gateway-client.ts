@@ -40,17 +40,8 @@ export function isAiGatewayConfigured() {
 	return getAiGatewayConfig() !== null;
 }
 
-export function isLegacyDirectAiEnabled() {
-	return serverEnv().NODE_ENV !== "production";
-}
-
 export function isAiProviderConfigured() {
-	const env = serverEnv();
-	return (
-		isAiGatewayConfigured() ||
-		(isLegacyDirectAiEnabled() &&
-			Boolean(env.GROQ_API_KEY || env.OPENAI_API_KEY || env.ANTHROPIC_API_KEY))
-	);
+	return isAiGatewayConfigured();
 }
 
 function parseOpenAiChatContent(payload: unknown): string | null {
