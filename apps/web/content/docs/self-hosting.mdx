@@ -113,7 +113,8 @@ By default, login links are printed to the server logs. To send emails:
 For video transcription and AI summaries:
 
 ```bash
-DEEPGRAM_API_KEY=your-key    # Transcription
+AI_GATEWAY_TRANSCRIPTION_URL=your-gateway-endpoint  # Nova-3 raw transcription
+AI_GATEWAY_TRANSCRIPTION_API_KEY=your-scoped-gateway-key
 GROQ_API_KEY=your-key        # AI summaries (preferred)
 OPENAI_API_KEY=your-key      # AI summaries (fallback)
 ```

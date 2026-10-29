@@ -7,7 +7,6 @@ import {
 	videoUploads,
 } from "@cap/database/schema";
 import type { VideoMetadata } from "@cap/database/types";
-import { serverEnv } from "@cap/env";
 import { userIsPro } from "@cap/utils";
 import { Storage } from "@cap/web-backend";
 import {
@@ -35,6 +34,10 @@ import {
 } from "@/lib/media-client";
 import { runPromise } from "@/lib/server";
 import { type DeepgramResult, formatToWebVTT } from "@/lib/transcribe-utils";
+import {
+	getTranscriptionGatewayConfig,
+	isTranscriptionConfigured,
+} from "@/lib/transcription-gateway";
 import { decodeStorageVideo } from "@/lib/video-storage";
 
 interface TranscribeWorkflowPayload {
@@ -98,8 +101,10 @@ export async function transcribeVideoWorkflow(
 async function validateVideo(videoId: string): Promise<VideoData> {
 	"use step";
 
-	if (!serverEnv().DEEPGRAM_API_KEY) {
-		throw new FatalError("Missing DEEPGRAM_API_KEY");
+	if (!isTranscriptionConfigured()) {
+		throw new FatalError(
+			"Missing or invalid transcription gateway configuration",
+		);
 	}
 
 	const query = await db()
@@ -339,11 +344,27 @@ async function transcribeWithDeepgram(
 
 	const audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
 
-	const deepgram = createClient(serverEnv().DEEPGRAM_API_KEY as string);
+	const gateway = getTranscriptionGatewayConfig();
+	if (!gateway)
+		throw new FatalError(
+			"Missing or invalid transcription gateway configuration",
+		);
+	const deepgram = createClient(gateway.apiKey, {
+		global: {
+			fetch: {
+				options: {
+					url: gateway.endpoint,
+					headers: gateway.headers,
+					redirect: "error",
+				},
+			},
+		},
+	});
 
 	const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
 		audioBuffer,
 		getDeepgramTranscriptionOptions(language),
+		gateway.endpoint,
 	);
 
 	if (error) {

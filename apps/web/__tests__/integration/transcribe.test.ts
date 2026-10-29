@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@cap/env", () => ({
 	serverEnv: vi.fn(() => ({
-		DEEPGRAM_API_KEY: "test-deepgram-api-key",
+		AI_GATEWAY_TRANSCRIPTION_URL:
+			"http://ai-gateway-litellm.ai-gateway.svc.cluster.local:4000/media/cap/nova-3/transcribe",
+		AI_GATEWAY_TRANSCRIPTION_API_KEY: "test-gateway-api-key",
 		DATABASE_URL: "mysql://test@localhost/test",
 	})),
 }));
@@ -78,10 +80,10 @@ describe("transcribeVideo", () => {
 	});
 
 	describe("input validation", () => {
-		it("requires DEEPGRAM_API_KEY environment variable", async () => {
+		it("requires transcription gateway configuration", async () => {
 			const { serverEnv } = await import("@cap/env");
 			vi.mocked(serverEnv).mockReturnValueOnce({
-				DEEPGRAM_API_KEY: undefined,
+				AI_GATEWAY_TRANSCRIPTION_API_KEY: undefined,
 			} as ReturnType<typeof serverEnv>);
 
 			const result = await transcribeVideo(
