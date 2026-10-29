@@ -25,7 +25,7 @@ runtimeSecret:
     aiGatewayApiKey: ai-gateway-api-key
     openaiApiKey: openai-api-key
     groqApiKey: groq-api-key
-    transcriptionGatewayApiKey: transcription-gateway-api-key
+    transcriptionGatewayApiKey: ai-gateway-transcription-api-key
     replicateApiToken: replicate-api-token
     workflowTargetWorld: workflow-target-world
     workflowPostgresUrl: workflow-postgres-url

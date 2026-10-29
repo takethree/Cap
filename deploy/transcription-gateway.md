@@ -16,7 +16,7 @@ passthrough route `/media/cap/nova-3/transcribe`. It is separate from the key
 used by Cap chat and summaries. Do not give Cap the provider's Deepgram key.
 
 The Helm chart reads the gateway key from `cap-runtime`, property
-`transcription-gateway-api-key`. Set `transcriptionGateway.enabled=true` and
+`ai-gateway-transcription-api-key`. Set `transcriptionGateway.enabled=true` and
 `transcriptionGateway.url` to the internal URL for Kubernetes. Production values
 already select these settings. The optional chart-created secret accepts
 `runtimeSecret.values.transcriptionGatewayApiKey`.
@@ -77,7 +77,7 @@ Do not merge or deploy the Cap migration before the following checks pass:
 3. Use approved synthetic audio to verify the gateway preserves raw bytes,
    repeated language parameters, raw utterances, punctuation, and timestamps.
 4. Confirm gateway logs contain no audio or transcript data.
-5. Provision `cap-runtime/transcription-gateway-api-key`.
+5. Provision `cap-runtime/ai-gateway-transcription-api-key`.
 6. Publish a matching Cap image and apply its chart configuration together.
 7. Verify the authorized recording, transcription, captions, language selection,
    status, and retry flow after deployment.
