@@ -25,7 +25,7 @@ runtimeSecret:
     aiGatewayApiKey: ai-gateway-api-key
     openaiApiKey: openai-api-key
     groqApiKey: groq-api-key
-    deepgramApiKey: deepgram-api-key
+    transcriptionGatewayApiKey: transcription-gateway-api-key
     replicateApiToken: replicate-api-token
     workflowTargetWorld: workflow-target-world
     workflowPostgresUrl: workflow-postgres-url
@@ -44,7 +44,7 @@ runtimeSecret:
     aiGatewayApiKey: ""
     openaiApiKey: ""
     groqApiKey: ""
-    deepgramApiKey: ""
+    transcriptionGatewayApiKey: ""
     replicateApiToken: ""
     workflowTargetWorld: ""
     workflowPostgresUrl: ""
@@ -58,6 +58,10 @@ aiGateway:
   enabled: false
   baseUrl: ""
   model: openai/gpt-oss-120b
+
+transcriptionGateway:
+  enabled: false
+  url: ""
 
 workflow:
   enabled: false

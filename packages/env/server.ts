@@ -121,7 +121,10 @@ function createServerEnv() {
 				.string()
 				.optional()
 				.describe("LiteLLM public model name for AI summaries and chat"),
-			DEEPGRAM_API_KEY: z.string().optional().describe("Audio transcription"),
+			AI_GATEWAY_TRANSCRIPTION_URL: z.string().optional(),
+			AI_GATEWAY_TRANSCRIPTION_API_KEY: z.string().optional(),
+			AI_GATEWAY_CF_ACCESS_CLIENT_ID: z.string().optional(),
+			AI_GATEWAY_CF_ACCESS_CLIENT_SECRET: z.string().optional(),
 			ANTHROPIC_API_KEY: z.string().optional().describe("AI chat"),
 			OPENAI_API_KEY: z.string().optional().describe("AI summaries"),
 			GROQ_API_KEY: z.string().optional().describe("AI summaries"),
