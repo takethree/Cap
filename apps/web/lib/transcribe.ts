@@ -3,8 +3,8 @@ import { organizations, videos, videoUploads } from "@cap/database/schema";
 import type { Video } from "@cap/web-domain";
 import { eq } from "drizzle-orm";
 import { start } from "workflow/api";
+import { isTranscriptionConfigured } from "@/lib/transcription-gateway";
 import { transcribeVideoWorkflow } from "@/workflows/transcribe";
-import { isTranscriptionConfigured } from "./transcription-gateway";
 
 type TranscribeResult = {
 	success: boolean;
