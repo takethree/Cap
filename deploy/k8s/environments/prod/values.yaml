@@ -1,7 +1,7 @@
 web:
   image:
     repository: 159207264407.dkr.ecr.us-east-2.amazonaws.com/cap-web
-    tag: sha-4c248ce6c4b6f789924cd735c6e666325c94139a
+    tag: sha-e98297f782f9b6e09e46cf7f535dcdf98ac87dea
     pullPolicy: IfNotPresent
   publicUrl: https://cap.take3tech.dev
   nextauthUrl: https://cap.take3tech.dev
