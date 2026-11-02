@@ -58,6 +58,7 @@ import {
 	SOCIAL_REFERRER_DOMAINS,
 } from "@/lib/social-crawlers";
 import { transcribeVideo } from "@/lib/transcribe";
+import { isTranscriptionConfigured } from "@/lib/transcription-gateway";
 import {
 	isEditSourceKey,
 	reconcileStaleEditUpload,
@@ -549,9 +550,8 @@ async function AuthorizedContent({
 		organizationSettings: video.orgSettings,
 		spaces: sharedSpaces.filter((space) => space.id !== space.organizationId),
 	});
-	const env = serverEnv();
 	const transcriptionGenerationAvailable =
-		Boolean(env.DEEPGRAM_API_KEY) && !rules.settings.disableTranscript;
+		isTranscriptionConfigured() && !rules.settings.disableTranscript;
 	const aiProviderAvailable = isAiProviderConfigured();
 
 	let aiGenerationEnabled = false;

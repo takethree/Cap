@@ -51,6 +51,9 @@ data:
   AI_GATEWAY_BASE_URL: {{ required "aiGateway.baseUrl is required when aiGateway.enabled=true" .Values.aiGateway.baseUrl | quote }}
   AI_GATEWAY_MODEL: {{ default "openai/gpt-oss-120b" .Values.aiGateway.model | quote }}
   {{- end }}
+  {{- if .Values.transcriptionGateway.enabled }}
+  AI_GATEWAY_TRANSCRIPTION_URL: {{ required "transcriptionGateway.url is required when transcriptionGateway.enabled=true" .Values.transcriptionGateway.url | quote }}
+  {{- end }}
   {{- range $key, $value := .Values.web.configEnv }}
   {{ $key }}: {{ $value | quote }}
   {{- end }}

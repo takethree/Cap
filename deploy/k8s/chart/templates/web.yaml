@@ -96,11 +96,6 @@ spec:
                   name: {{ include "cap.secretName" . }}
                   key: {{ .Values.runtimeSecret.keys.mediaServerWebhookSecret }}
             {{- if .Values.providerKeys.enabled }}
-            - name: DEEPGRAM_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "cap.secretName" . }}
-                  key: {{ .Values.runtimeSecret.keys.deepgramApiKey }}
             {{- if not .Values.aiGateway.enabled }}
             - name: GROQ_API_KEY
               valueFrom:
@@ -135,6 +130,18 @@ spec:
                 configMapKeyRef:
                   name: {{ include "cap.configName" . }}
                   key: AI_GATEWAY_MODEL
+            {{- end }}
+            {{- if .Values.transcriptionGateway.enabled }}
+            - name: AI_GATEWAY_TRANSCRIPTION_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cap.configName" . }}
+                  key: AI_GATEWAY_TRANSCRIPTION_URL
+            - name: AI_GATEWAY_TRANSCRIPTION_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cap.secretName" . }}
+                  key: {{ .Values.runtimeSecret.keys.transcriptionGatewayApiKey }}
             {{- end }}
             {{- if .Values.workflow.enabled }}
             - name: WORKFLOW_TARGET_WORLD
