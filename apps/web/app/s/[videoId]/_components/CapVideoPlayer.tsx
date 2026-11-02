@@ -417,16 +417,19 @@ export function CapVideoPlayer({
 		};
 
 		const setupTracks = (): void => {
-			const tracks = Array.from(video.textTracks);
+			captionTrack?.removeEventListener("cuechange", handleCueChange);
+			captionTrack =
+				Array.from(video.textTracks).find(
+					(track) => track.kind === "captions" || track.kind === "subtitles",
+				) ?? null;
 
-			for (const track of tracks) {
-				if (track.kind === "captions" || track.kind === "subtitles") {
-					captionTrack = track;
-					track.mode = "hidden";
-					track.addEventListener("cuechange", handleCueChange);
-					break;
+			if (captionTrack) {
+				captionTrack.addEventListener("cuechange", handleCueChange);
+				if (captionTrack.mode !== "hidden") {
+					captionTrack.mode = "hidden";
 				}
 			}
+			handleCueChange();
 		};
 
 		const ensureTracksHidden = (): void => {
@@ -467,6 +470,7 @@ export function CapVideoPlayer({
 		if (video.readyState === 4) {
 			handleLoadedData();
 		}
+		setupTracks();
 
 		return () => {
 			video.removeEventListener("loadeddata", handleLoadedData);
