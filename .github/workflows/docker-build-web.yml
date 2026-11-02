@@ -91,6 +91,8 @@ jobs:
     name: Create Multi-Architecture Manifest
     needs: build
     runs-on: ubuntu-latest
+    outputs:
+      production_image: ${{ steps.manifest.outputs.production_image }}
     permissions:
       contents: read
       packages: write
@@ -118,11 +120,16 @@ jobs:
           echo "REPOSITORY_OWNER=${GITHUB_REPOSITORY_OWNER@L}" >>${GITHUB_ENV}
 
       - name: Create Image Manifest
+        id: manifest
         env:
           IMAGE_TAG: ${{ inputs.tag || 'latest' }}
         run: |
-          docker buildx imagetools create -t "ghcr.io/${REPOSITORY_OWNER}/cap-web:${IMAGE_TAG}" \
+          production_image="ghcr.io/${REPOSITORY_OWNER}/cap-web:run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          docker buildx imagetools create \
+            -t "ghcr.io/${REPOSITORY_OWNER}/cap-web:${IMAGE_TAG}" \
+            -t "$production_image" \
             $(find /tmp/digests -type f -not -path "*/\.*" -exec basename {} \; | xargs -I {} echo "ghcr.io/${{ env.REPOSITORY_OWNER }}/cap-web@sha256:{}")
+          echo "production_image=$production_image" >> "$GITHUB_OUTPUT"
 
   publish-ecr:
     name: Publish Production Web Image
@@ -154,8 +161,7 @@ jobs:
 
       - name: Copy production image
         env:
-          IMAGE_TAG: ${{ inputs.tag || 'latest' }}
-          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          SOURCE_IMAGE: ${{ needs.merge.outputs.production_image }}
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
         run: |
           set -euo pipefail
@@ -164,5 +170,5 @@ jobs:
           skopeo copy --all --preserve-digests \
             --src-authfile "$HOME/.docker/config.json" \
             --dest-authfile "$HOME/.docker/config.json" \
-            "docker://ghcr.io/${REPOSITORY_OWNER,,}/cap-web:${IMAGE_TAG}" \
+            "docker://${SOURCE_IMAGE}" \
             "docker://${ECR_REGISTRY}/cap-web:sha-${GITHUB_SHA}"
