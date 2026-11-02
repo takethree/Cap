@@ -8,6 +8,11 @@ on:
         required: false
         default: "latest"
         type: string
+      publish_ecr:
+        description: "Build for Cap production and publish the web image to ECR"
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build:
@@ -55,6 +60,11 @@ jobs:
           context: .
           file: apps/web/Dockerfile
           platforms: linux/${{ matrix.platform }}
+          build-args: |
+            NEXT_PUBLIC_DOCKER_BUILD=true
+            NEXT_PUBLIC_WEB_URL=${{ inputs.publish_ecr && 'https://cap.take3tech.dev' || 'http://localhost:3000' }}
+            TAKE3_DESKTOP_RELEASE_REPOSITORY=${{ inputs.publish_ecr && github.repository || 'CapSoftware/Cap' }}
+            TAKE3_DESKTOP_RELEASE_TAG_PREFIX=take3-desktop-
           push: true
           outputs: type=image,name=ghcr.io/${{ env.REPOSITORY_OWNER }}/cap-web,push-by-digest=true
           cache-from: type=gha,scope=buildx-${{ matrix.platform }}
@@ -105,6 +115,51 @@ jobs:
           echo "REPOSITORY_OWNER=${GITHUB_REPOSITORY_OWNER@L}" >>${GITHUB_ENV}
 
       - name: Create Image Manifest
+        env:
+          IMAGE_TAG: ${{ inputs.tag || 'latest' }}
         run: |
-          docker buildx imagetools create -t ghcr.io/${{ env.REPOSITORY_OWNER }}/cap-web:${{ inputs.tag || 'latest' }} \
+          docker buildx imagetools create -t "ghcr.io/${REPOSITORY_OWNER}/cap-web:${IMAGE_TAG}" \
             $(find /tmp/digests -type f -not -path "*/\.*" -exec basename {} \; | xargs -I {} echo "ghcr.io/${{ env.REPOSITORY_OWNER }}/cap-web@sha256:{}")
+
+  publish-ecr:
+    name: Publish Production Web Image
+    if: ${{ inputs.publish_ecr }}
+    needs: merge
+    runs-on: ubuntu-24.04
+    environment: production
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::159207264407:role/cap-github-actions-ecr-publisher
+          aws-region: us-east-2
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Copy production image
+        env:
+          IMAGE_TAG: ${{ inputs.tag || 'latest' }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y skopeo
+          skopeo copy --all --preserve-digests \
+            --src-authfile "$HOME/.docker/config.json" \
+            --dest-authfile "$HOME/.docker/config.json" \
+            "docker://ghcr.io/${REPOSITORY_OWNER,,}/cap-web:${IMAGE_TAG}" \
+            "docker://${ECR_REGISTRY}/cap-web:sha-${GITHUB_SHA}"
