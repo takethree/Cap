@@ -113,11 +113,18 @@ By default, login links are printed to the server logs. To send emails:
 For video transcription and AI summaries:
 
 ```bash
-AI_GATEWAY_TRANSCRIPTION_URL=your-gateway-endpoint  # Nova-3 raw transcription
+AI_GATEWAY_TRANSCRIPTION_URL=https://ai-gateway.take3tech.dev/media/cap/nova-3/transcribe
 AI_GATEWAY_TRANSCRIPTION_API_KEY=your-scoped-gateway-key
+AI_GATEWAY_CF_ACCESS_CLIENT_ID=your-access-client-id
+AI_GATEWAY_CF_ACCESS_CLIENT_SECRET=your-access-client-secret
 GROQ_API_KEY=your-key        # AI summaries (preferred)
 OPENAI_API_KEY=your-key      # AI summaries (fallback)
 ```
+
+The public gateway requires both Cloudflare Access credentials. The only
+alternative is the internal cluster URL
+`http://ai-gateway-litellm.ai-gateway.svc.cluster.local:4000/media/cap/nova-3/transcribe`.
+Keep this exact path and omit query strings and fragments.
 
 ### Google OAuth
 

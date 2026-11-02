@@ -349,11 +349,12 @@ async function transcribeWithDeepgram(
 		throw new FatalError(
 			"Missing or invalid transcription gateway configuration",
 		);
+	const gatewayUrl = new URL(gateway.endpoint);
 	const deepgram = createClient(gateway.apiKey, {
 		global: {
 			fetch: {
 				options: {
-					url: gateway.endpoint,
+					url: gatewayUrl.origin,
 					headers: gateway.headers,
 					redirect: "error",
 				},
@@ -364,7 +365,7 @@ async function transcribeWithDeepgram(
 	const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
 		audioBuffer,
 		getDeepgramTranscriptionOptions(language),
-		gateway.endpoint,
+		gatewayUrl.pathname,
 	);
 
 	if (error) {
