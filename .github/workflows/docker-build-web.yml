@@ -29,6 +29,9 @@ jobs:
     permissions:
       contents: read
       packages: write
+    env:
+      PUBLIC_WEB_URL: ${{ inputs.publish_ecr && 'https://cap.take3tech.dev' || 'http://localhost:3000' }}
+      RELEASE_REPOSITORY: ${{ inputs.publish_ecr && github.repository || 'CapSoftware/Cap' }}
 
     steps:
       - name: Checkout Repository
@@ -39,7 +42,7 @@ jobs:
 
       - name: Create .env file
         run: |
-          echo "WEB_URL=http://localhost:3000" > .env
+          echo "WEB_URL=${PUBLIC_WEB_URL}" > .env
           echo "NEXT_PUBLIC_DOCKER_BUILD=true" >> .env
 
       - name: Login to GitHub Container Registry
@@ -62,8 +65,8 @@ jobs:
           platforms: linux/${{ matrix.platform }}
           build-args: |
             NEXT_PUBLIC_DOCKER_BUILD=true
-            NEXT_PUBLIC_WEB_URL=${{ inputs.publish_ecr && 'https://cap.take3tech.dev' || 'http://localhost:3000' }}
-            TAKE3_DESKTOP_RELEASE_REPOSITORY=${{ inputs.publish_ecr && github.repository || 'CapSoftware/Cap' }}
+            NEXT_PUBLIC_WEB_URL=${{ env.PUBLIC_WEB_URL }}
+            TAKE3_DESKTOP_RELEASE_REPOSITORY=${{ env.RELEASE_REPOSITORY }}
             TAKE3_DESKTOP_RELEASE_TAG_PREFIX=take3-desktop-
           push: true
           outputs: type=image,name=ghcr.io/${{ env.REPOSITORY_OWNER }}/cap-web,push-by-digest=true
