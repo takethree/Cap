@@ -16,16 +16,16 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout Cap
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
 
       - name: Checkout Fixture Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           repository: CapSoftware/cap-performance-fixtures
           path: performance-fixtures
 
       - name: Rust setup
-        uses: dtolnay/rust-toolchain@1.88.0
+        uses: dtolnay/rust-toolchain@360a4e93673de6630fac2478bc9e35244b01a759 # dtolnay/rust-toolchain@1.88.0
 
       - name: Rust cache
         uses: ./.github/actions/setup-rust-cache
@@ -33,7 +33,7 @@ jobs:
           target: ${{ runner.os == 'Windows' && 'x86_64-pc-windows-msvc' || 'aarch64-apple-darwin' }}
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # actions/setup-node@v4
         with:
           node-version: '24.22.1'
 
@@ -61,14 +61,14 @@ jobs:
 
       - name: Upload results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: performance-results-${{ matrix.runner }}
           path: ${{ github.workspace }}/${{ env.PERFORMANCE_RESULTS_PATH }}
 
       - name: Upload suite log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: performance-log-${{ matrix.runner }}
           path: ${{ github.workspace }}/${{ env.PERFORMANCE_LOG_PATH }}

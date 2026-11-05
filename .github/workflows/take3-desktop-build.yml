@@ -27,7 +27,7 @@ jobs:
       id-token: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
 
       - name: Verify required secrets
         shell: pwsh
@@ -56,7 +56,7 @@ jobs:
           }
 
       - name: Rust setup
-        uses: dtolnay/rust-toolchain@1.88.0
+        uses: dtolnay/rust-toolchain@360a4e93673de6630fac2478bc9e35244b01a759 # dtolnay/rust-toolchain@1.88.0
         with:
           targets: ${{ env.TARGET }}
 
@@ -134,7 +134,7 @@ jobs:
 
       - name: Upload unsigned Windows installer
         id: upload_unsigned_windows_installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: take3-unsigned-windows-installer
           path: target/${{ env.TARGET }}/release/bundle/nsis/*.exe
@@ -143,7 +143,7 @@ jobs:
 
       - name: Submit SignPath signing request
         id: submit_signpath_signing_request
-        uses: signpath/github-action-submit-signing-request@v1
+        uses: signpath/github-action-submit-signing-request@ced31329c0317e779dad2eec2a7c3bb46ea1343e # signpath/github-action-submit-signing-request@v1
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
@@ -223,7 +223,7 @@ jobs:
           "tag=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Upload Take-3 build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: take3-windows-desktop-${{ steps.version.outputs.value }}
           path: |
@@ -232,7 +232,7 @@ jobs:
           retention-days: 14
 
       - name: Publish Take-3 release assets
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.manifest.outputs.tag }}
           name: Take-3 Desktop ${{ steps.version.outputs.value }}
