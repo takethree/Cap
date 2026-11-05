@@ -12,7 +12,7 @@ runs:
   using: "composite"
   steps:
     - name: Cache Rust Dependencies
-      uses: swatinem/rust-cache@v2
+      uses: swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # swatinem/rust-cache@v2
       with:
         prefix-key: v1-rust
         cache-bin: "false"

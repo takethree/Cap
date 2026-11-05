@@ -28,10 +28,10 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
 
       - name: Read version number
-        uses: SebRollen/toml-action@v1.0.2
+        uses: SebRollen/toml-action@2bd04b06a3ebc3e6a3eb6060de115710cad16cd6 # SebRollen/toml-action@v1.0.2
         id: read_version
         with:
           file: ${{ env.APP_CARGO_TOML }}
@@ -39,7 +39,7 @@ jobs:
 
       - name: Prepare release
         id: create_tag
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # actions/github-script@v7
         with:
           script: |
             const tag = "cap-v${{ steps.read_version.outputs.value }}";
@@ -121,7 +121,7 @@ jobs:
       - name: Create draft CN release
         id: create_cn_release
         if: ${{ steps.create_tag.outputs.release_published != 'true' }}
-        uses: crabnebula-dev/cloud-release@v0
+        uses: crabnebula-dev/cloud-release@1a8803698ba41de6b23e42abc5dcc3721308233c # crabnebula-dev/cloud-release@v0
         with:
           command: release draft ${{ env.CN_APPLICATION }} ${{ steps.read_version.outputs.value }} --framework tauri
           api-key: ${{ secrets.CN_API_KEY }}
@@ -130,7 +130,7 @@ jobs:
         id: create_gh_release
         if: ${{ steps.create_tag.outputs.release_published != 'true' }}
         # TODO: Change to stable version when available
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # softprops/action-gh-release@v2
         with:
           name: ${{ steps.read_version.outputs.value }}
           tag_name: ${{ steps.create_tag.outputs.tag_name }}
@@ -139,7 +139,7 @@ jobs:
 
       - name: Update Discord interaction
         if: ${{ inputs.interactionId != '' && steps.create_tag.outputs.release_published != 'true' }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # actions/github-script@v7
         with:
           script: |
             async function main() {
@@ -192,7 +192,7 @@ jobs:
     runs-on: ${{ matrix.settings.runner }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           ref: ${{ needs.draft.outputs.tag_name }}
 
@@ -215,7 +215,7 @@ jobs:
         run: security find-identity -v -p codesigning ${{ runner.temp }}/build.keychain
 
       - name: Rust setup
-        uses: dtolnay/rust-toolchain@1.88.0
+        uses: dtolnay/rust-toolchain@360a4e93673de6630fac2478bc9e35244b01a759 # dtolnay/rust-toolchain@1.88.0
         with:
           targets: ${{ matrix.settings.target }}
 
@@ -282,7 +282,7 @@ jobs:
       - name: Upload unsigned Windows installer
         if: ${{ runner.os == 'Windows' }}
         id: upload_unsigned_windows_installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: unsigned-windows-installer
           path: target/${{ matrix.settings.target }}/release/bundle/nsis/*.exe
@@ -291,7 +291,7 @@ jobs:
       - name: Submit SignPath signing request
         if: ${{ runner.os == 'Windows' }}
         id: submit_signpath_signing_request
-        uses: signpath/github-action-submit-signing-request@v1
+        uses: signpath/github-action-submit-signing-request@ced31329c0317e779dad2eec2a7c3bb46ea1343e # signpath/github-action-submit-signing-request@v1
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
@@ -342,7 +342,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
       - name: Upload assets
-        uses: crabnebula-dev/cloud-release@v0
+        uses: crabnebula-dev/cloud-release@1a8803698ba41de6b23e42abc5dcc3721308233c # crabnebula-dev/cloud-release@v0
         with:
           working-directory: apps/desktop
           command: release upload ${{ env.CN_APPLICATION }} "${{ needs.draft.outputs.version }}" --framework tauri
@@ -377,7 +377,7 @@ jobs:
     steps:
       - name: Send Discord notification
         if: ${{ inputs.interactionId != '' }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # actions/github-script@v7
         with:
           script: |
             async function main() {
