@@ -19,10 +19,10 @@ jobs:
       issues: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
 
       - name: Run opencode
-        uses: sst/opencode/github@latest
+        uses: sst/opencode/github@77fc88c8ade8e5a620ebbe1197f3a572d29ae91a # sst/opencode/github@latest
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
         with:
