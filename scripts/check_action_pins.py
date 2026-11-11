@@ -184,11 +184,28 @@ def validate_docker_metadata(document, action_file, root, errors):
 
 def inspect_document(document, path, root, errors):
     def inspect_steps(container):
+        visited_steps = set()
+        visited_sequences = set()
+
+        def inspect_step(step):
+            if not isinstance(step, MappingNode) or id(step) in visited_steps:
+                return
+            visited_steps.add(id(step))
+            for value in mapping_values(step, "uses"):
+                validate_action_use(value, path, errors)
+            for parallel in mapping_values(step, "parallel"):
+                if not isinstance(parallel, SequenceNode) or id(parallel) in visited_sequences:
+                    continue
+                visited_sequences.add(id(parallel))
+                for parallel_step in parallel.value:
+                    inspect_step(parallel_step)
+
         for steps in mapping_values(container, "steps"):
-            if isinstance(steps, SequenceNode):
-                for step in steps.value:
-                    for value in mapping_values(step, "uses"):
-                        validate_action_use(value, path, errors)
+            if not isinstance(steps, SequenceNode) or id(steps) in visited_sequences:
+                continue
+            visited_sequences.add(id(steps))
+            for step in steps.value:
+                inspect_step(step)
 
     if Path(path).name.lower() in ("action.yml", "action.yaml"):
         validate_docker_metadata(document, path, root, errors)
